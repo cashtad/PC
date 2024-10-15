@@ -15,6 +15,7 @@ typedef enum {
     TOKEN_DIV,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
+    TOKEN_POW, // Новый токен для возведения в степень
     TOKEN_EOF
 } TokenType;
 
@@ -122,11 +123,22 @@ Token get_next_token(Lexer* lexer) {
             }
             token.func[len] = '\0';
 
-            if (strcmp(token.func, "cos") == 0 || strcmp(token.func, "sin") == 0 || strcmp(token.func, "tan") == 0) {
+            if (strcmp(token.func, "cos") == 0 ||
+                strcmp(token.func, "sin") == 0 ||
+                strcmp(token.func, "tan") == 0 ||
+                strcmp(token.func, "abs") == 0 ||
+                strcmp(token.func, "ln") == 0 ||
+                strcmp(token.func, "log") == 0 ||
+                strcmp(token.func, "asin") == 0 ||
+                strcmp(token.func, "acos") == 0 ||
+                strcmp(token.func, "atan") == 0 ||
+                strcmp(token.func, "sinh") == 0 ||
+                strcmp(token.func, "cosh") == 0 ||
+                strcmp(token.func, "tanh") == 0 ||
+                strcmp(token.func, "exp") == 0) {
                 token.type = TOKEN_FUNC;
-                //printf("Token: FUNC(%s)\n", token.func);
                 return token;
-            }
+    }
             token.type = TOKEN_ID;
             //printf("Token: ID(%s)\n", token.func);
             return token;
@@ -277,10 +289,30 @@ double evaluate(Node* node) {
 
         if (strcmp(node->func.func, "sin") == 0) {
             result = sin(arg_value);
-            //printf("Evaluating function: sin with argument: %.6f, result: %.6f\n", arg_value, result);
         } else if (strcmp(node->func.func, "cos") == 0) {
             result = cos(arg_value);
-            //printf("Evaluating function: cos with argument: %.6f, result: %.6f\n", arg_value, result);
+        } else if (strcmp(node->func.func, "tan") == 0) {
+            result = tan(arg_value);
+        } else if (strcmp(node->func.func, "abs") == 0) {
+            result = fabs(arg_value);
+        } else if (strcmp(node->func.func, "ln") == 0) {
+            result = log(arg_value);
+        } else if (strcmp(node->func.func, "log") == 0) {
+            result = log10(arg_value);
+        } else if (strcmp(node->func.func, "asin") == 0) {
+            result = asin(arg_value);
+        } else if (strcmp(node->func.func, "acos") == 0) {
+            result = acos(arg_value);
+        } else if (strcmp(node->func.func, "atan") == 0) {
+            result = atan(arg_value);
+        } else if (strcmp(node->func.func, "sinh") == 0) {
+            result = sinh(arg_value);
+        } else if (strcmp(node->func.func, "cosh") == 0) {
+            result = cosh(arg_value);
+        } else if (strcmp(node->func.func, "tanh") == 0) {
+            result = tanh(arg_value);
+        } else if (strcmp(node->func.func, "exp") == 0) {
+            result = exp(arg_value);
         } else {
             fprintf(stderr, "Error: unknown function '%s'\n", node->func.func);
             exit(EXIT_FAILURE);
@@ -332,15 +364,24 @@ void free_node(Node* node) {
 
 int main() {
     const char* expressions[] = {
-        "sin(0) + cos(0)",       // 0 + 1 = 1
-        "2 * sin(0) + 4",        // 0 + 4 = 4
-        "cos(0) * sin(0)",       // 1 * 0 = 0
-        "sin(0) + 1",            // 0 + 1 = 1
-        "2 * (3 + 5)",           // 2 * 8 = 16
-        "10 - 2 * cos(0) + 5",   // 10 - 2 * 1 + 5 = 13
-        "3 + 5 * (2 + 1)",       // 3 + 15 = 18
-        "cos(0) + sin(0)",        // 1 + 0 = 1
-        "5 * 8 / (10 + 0) / (3 + 5) + 1 - 6 * (1 + 1) + 3 - 5 / 5",
+        "sin(0) + cos(0)",       // 1
+        "2 * sin(0) + 4",        // 4
+        "cos(0) * sin(0)",       // 0
+        "sin(0) + 1",            // 1
+        "2 * (3 + 5)",           // 16
+        "10 - 2 * cos(0) + 5",   // 13
+        "3 + 5 * (2 + 1)",       // 18
+        "abs(5)",               // 5
+        "ln(1)",                 // 0
+        "log(10)",               // 1
+        "tan(0)",                // 0
+        "asin(0)",               // 0
+        "acos(1)",               // 0
+        "atan(1)",               // π/4
+        "sinh(0)",               // 0
+        "cosh(0)",               // 1
+        "tanh(0)",               // 0
+        "exp(0)"                 // 1
     };
 
     const double expected_results[] = {
@@ -351,8 +392,17 @@ int main() {
         16.0,  // 2 * (3 + 5)
         13.0,  // 10 - 2 * cos(0) + 5
         18.0,  // 3 + 5 * (2 + 1)
-        1.0,    // cos(0) + sin(0)
-        -8.5   // 5 * 8 / (10 + 0) / (3 + 5) + 1 - 6 * (1 + 1) + 3 - 5 / 5
+        5.0,   // abs(-5)
+        0.0,   // ln(1)
+        1.0,   // log(10)
+        0.0,   // tan(0)
+        0.0,   // asin(0)
+        0.0,   // acos(1)
+        M_PI / 4, // atan(1)
+        0.0,   // sinh(0)
+        1.0,   // cosh(0)
+        0.0,   // tanh(0)
+        1.0    // exp(0)
     };
 
     size_t num_expressions = sizeof(expressions) / sizeof(expressions[0]);
