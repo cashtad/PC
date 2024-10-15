@@ -180,6 +180,11 @@ Token get_next_token(Lexer* lexer) {
             return (Token){ TOKEN_RPAREN };
         }
 
+        if (lexer->current_char == '^') {
+            advance(lexer);
+            return (Token){ TOKEN_POW };
+        }
+
         fprintf(stderr, "Error: unknown character '%c'\n", lexer->current_char);
         exit(EXIT_FAILURE);
     }
@@ -241,18 +246,26 @@ Node* parse_term(Lexer* lexer) {
     Node* node = parse_factor(lexer);
     Token token = get_next_token(lexer);
 
-    while (token.type == TOKEN_MUL || token.type == TOKEN_DIV) {
+    while (token.type == TOKEN_MUL || token.type == TOKEN_DIV || token.type == TOKEN_POW) {
         Node* new_node = (Node*)malloc(sizeof(Node));
         new_node->type = NODE_OP;
-        new_node->op.op = (token.type == TOKEN_MUL) ? '*' : '/';
+
+        // Обработка операторов
+        if (token.type == TOKEN_MUL) {
+            new_node->op.op = '*';
+        } else if (token.type == TOKEN_DIV) {
+            new_node->op.op = '/';
+        } else if (token.type == TOKEN_POW) {
+            new_node->op.op = '^'; // Для возведения в степень
+        }
+
         new_node->op.left = node;
         new_node->op.right = parse_factor(lexer);
         node = new_node;
-        //printf("Parsed term with operator: %c\n", new_node->op.op);
         token = get_next_token(lexer);
     }
 
-    lexer->pos--; // Push back the last token
+    lexer->pos--; // Возврат последнего токена
     lexer->current_char = lexer->text[lexer->pos];
     return node;
 }
@@ -326,23 +339,22 @@ double evaluate(Node* node) {
         switch (node->op.op) {
             case '+':
                 result = left_value + right_value;
-                //printf("Evaluating: %.6f + %.6f = %.6f\n", left_value, right_value, result);
-                break;
+            break;
             case '-':
                 result = left_value - right_value;
-                //printf("Evaluating: %.6f - %.6f = %.6f\n", left_value, right_value, result);
-                break;
+            break;
             case '*':
                 result = left_value * right_value;
-                //printf("Evaluating: %.6f * %.6f = %.6f\n", left_value, right_value, result);
-                break;
+            break;
             case '/':
                 result = left_value / right_value;
-                //printf("Evaluating: %.6f / %.6f = %.6f\n", left_value, right_value, result);
-                break;
+            break;
+            case '^': // Обработка возведения в степень
+                result = pow(left_value, right_value);
+            break;
             default:
                 fprintf(stderr, "Error: unknown operator '%c'\n", node->op.op);
-                exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
         return result;
     }
@@ -381,7 +393,11 @@ int main() {
         "sinh(0)",               // 0
         "cosh(0)",               // 1
         "tanh(0)",               // 0
-        "exp(0)"                 // 1
+        "exp(0)",                 // 1
+        "2^3 + 1",                // 9
+        "3 + 2^2 * 2",            // 11
+        "sin (0 ^2)*cos(0 / 2.0)", // 0
+        "sin (0 ^2)+cos(0 / 2.0)" //  1
     };
 
     const double expected_results[] = {
@@ -402,7 +418,12 @@ int main() {
         0.0,   // sinh(0)
         1.0,   // cosh(0)
         0.0,   // tanh(0)
-        1.0    // exp(0)
+        1.0,    // exp(0)
+        9,      // 2^3 + 1
+        11,     // 3 + 2^2 * 2
+        0,      // sin (0 ˆ2)*cos(0 / 2.0)
+        1,     // sin (0 ˆ2)+cos(0 / 2.0)
+
     };
 
     size_t num_expressions = sizeof(expressions) / sizeof(expressions[0]);
