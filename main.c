@@ -1,125 +1,292 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ctype.h>
 #include <string.h>
 
-#define DEFAULT_X_MIN (-10)
-#define DEFAULT_X_MAX 10
-#define DEFAULT_Y_MIN (-10)
-#define DEFAULT_Y_MAX 10
-#define STEP 0.1
+// Token types
+typedef enum {
+    TOKEN_NUM,
+    TOKEN_ID,
+    TOKEN_FUNC,
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_MUL,
+    TOKEN_DIV,
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
+    TOKEN_EOF
+} TokenType;
 
-// Функции для математических операций
-double eval_function(double x) {
-    // Пример функции для теста, можно заменить на любую
-    // Например, sin(x), cos(x), exp(x), log(x)
-    return sin(x) * cos(x); // функция y = sin(x) * cos(x)
+// Token structure
+typedef struct {
+    TokenType type;
+    union {
+        double num;  // For numeric values
+        char id[64]; // For variable identifiers
+        char func[64]; // For function names
+    };
+} Token;
+
+// Lexer structure
+typedef struct {
+    const char* text;
+    size_t pos;
+    char current_char;
+} Lexer;
+
+// Node types for the abstract syntax tree (AST)
+typedef struct Node {
+    enum { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type;
+    union {
+        double num; // For numeric values
+        char id[64]; // For variable identifiers
+        struct { char func[64]; struct Node* arg; } func; // For functions
+        struct { char op; struct Node* left; struct Node* right; } op; // For operations
+    };
+} Node;
+
+// Function prototypes
+Lexer* create_lexer(const char* text);
+void advance(Lexer* lexer);
+void skip_whitespace(Lexer* lexer);
+Token get_next_token(Lexer* lexer);
+Node* parse_expr(Lexer* lexer);
+Node* parse_factor(Lexer* lexer);
+Node* parse_term(Lexer* lexer);
+double evaluate(Node* node);
+void free_node(Node* node);
+
+Lexer* create_lexer(const char* text) {
+    Lexer* lexer = (Lexer*)malloc(sizeof(Lexer));
+    lexer->text = text;
+    lexer->pos = 0;
+    lexer->current_char = text[0];
+    return lexer;
 }
 
-// Преобразование координат в систему PostScript
-void convert_to_postscript(double x, double y, double x_min, double x_max, double y_min, double y_max, int width, int height, double *ps_x, double *ps_y) {
-    *ps_x = ((x - x_min) / (x_max - x_min)) * width;       // Преобразование X в координаты PostScript
-    *ps_y = ((y - y_min) / (y_max - y_min)) * height;      // Преобразование Y в координаты PostScript
-}
-
-// Функция для записи PostScript файла
-void generate_postscript(const char *filename, const double x_min, const double x_max, const double y_min, const double y_max) {
-    FILE *fp = fopen(filename, "w");
-    if (fp == NULL) {
-        fprintf(stderr, "Error: Could not create file %s\n", filename);
-        exit(3);
+void advance(Lexer* lexer) {
+    lexer->pos++;
+    if (lexer->pos < strlen(lexer->text)) {
+        lexer->current_char = lexer->text[lexer->pos];
+    } else {
+        lexer->current_char = '\0';
     }
+}
 
-    const int width = 500;
-    const int height = 500;  // Размеры области рисования
+void skip_whitespace(Lexer* lexer) {
+    while (lexer->current_char != '\0' && isspace(lexer->current_char)) {
+        advance(lexer);
+    }
+}
 
-    // Заголовок PostScript файла
-    fprintf(fp, "%%!PS-Adobe-2.0\n");
-    fprintf(fp, "%%%%Creator: C Graph Plotter\n");
-    fprintf(fp, "%%%%Title: Function Graph\n");
-    fprintf(fp, "%%%%EndComments\n");
-
-    // Настройка ширины линий и рисование осей
-    fprintf(fp, "1 setlinewidth\n");
-    fprintf(fp, "newpath\n");
-    fprintf(fp, "%d %d moveto\n", width / 2, 0);  // Ось Y
-    fprintf(fp, "%d %d lineto\n", width / 2, height);
-    fprintf(fp, "%d %d moveto\n", 0, height / 2); // Ось X
-    fprintf(fp, "%d %d lineto\n", width, height / 2);
-    fprintf(fp, "stroke\n");
-
-    // Рисование графика функции
-    fprintf(fp, "0.5 setlinewidth\n");
-    double x, y, ps_x, ps_y;
-    int is_first_point = 1;
-    for (x = x_min; x <= x_max; x += STEP) {
-        y = eval_function(x);  // Вычисление значения функции y = f(x)
-
-        if (y < y_min || y > y_max) {
-            // Пропускаем точки вне диапазона
+Token get_next_token(Lexer* lexer) {
+    while (lexer->current_char != '\0') {
+        if (isspace(lexer->current_char)) {
+            skip_whitespace(lexer);
             continue;
         }
 
-        // Преобразование координат в систему PostScript
-        convert_to_postscript(x, y, x_min, x_max, y_min, y_max, width, height, &ps_x, &ps_y);
+        if (isdigit(lexer->current_char) || lexer->current_char == '.') {
+            Token token = { TOKEN_NUM, .num = 0.0 };
+            double fraction = 1.0;
+            int is_fraction = 0;
 
-        if (is_first_point) {
-            fprintf(fp, "newpath\n");
-            fprintf(fp, "%.2f %.2f moveto\n", ps_x, ps_y);  // Первая точка
-            is_first_point = 0;
-        } else {
-            fprintf(fp, "%.2f %.2f lineto\n", ps_x, ps_y);  // Соединение точек
+            while (isdigit(lexer->current_char) || lexer->current_char == '.') {
+                if (lexer->current_char == '.') {
+                    is_fraction = 1; // Start of fractional part
+                    advance(lexer);
+                    continue;
+                }
+                if (is_fraction) {
+                    fraction *= 0.1;
+                    token.num += (lexer->current_char - '0') * fraction;
+                } else {
+                    token.num = token.num * 10 + (lexer->current_char - '0');
+                }
+                advance(lexer);
+            }
+            return token;
+        }
+
+        if (isalpha(lexer->current_char)) {
+            Token token;
+            size_t len = 0;
+            while (isalpha(lexer->current_char)) {
+                if (len < 63) {
+                    token.func[len++] = lexer->current_char; // Use func for both ID and function names
+                }
+                advance(lexer);
+            }
+            token.func[len] = '\0';
+            if (strcmp(token.func, "cos") == 0 || strcmp(token.func, "sin") == 0 || strcmp(token.func, "tan") == 0) {
+                token.type = TOKEN_FUNC;
+                return token;
+            }
+            token.type = TOKEN_ID;
+            return token;
+        }
+
+        if (lexer->current_char == '+') {
+            advance(lexer);
+            return (Token){ TOKEN_PLUS };
+        }
+
+        if (lexer->current_char == '-') {
+            advance(lexer);
+            return (Token){ TOKEN_MINUS };
+        }
+
+        if (lexer->current_char == '*') {
+            advance(lexer);
+            return (Token){ TOKEN_MUL };
+        }
+
+        if (lexer->current_char == '/') {
+            advance(lexer);
+            return (Token){ TOKEN_DIV };
+        }
+
+        if (lexer->current_char == '(') {
+            advance(lexer);
+            return (Token){ TOKEN_LPAREN };
+        }
+
+        if (lexer->current_char == ')') {
+            advance(lexer);
+            return (Token){ TOKEN_RPAREN };
+        }
+
+        fprintf(stderr, "Error: unknown character '%c'\n", lexer->current_char);
+        exit(EXIT_FAILURE);
+    }
+
+    return (Token){ TOKEN_EOF };
+}
+
+Node* parse_expr(Lexer* lexer);
+
+Node* parse_factor(Lexer* lexer) {
+    Token token = get_next_token(lexer);
+    Node* node = NULL;
+
+    if (token.type == TOKEN_NUM) {
+        node = (Node*)malloc(sizeof(Node));
+        node->type = NODE_NUM;
+        node->num = token.num;
+    } else if (token.type == TOKEN_ID) {
+        node = (Node*)malloc(sizeof(Node));
+        node->type = NODE_ID;
+        strcpy(node->id, token.id);
+    } else if (token.type == TOKEN_FUNC) {
+        node = (Node*)malloc(sizeof(Node));
+        node->type = NODE_FUNC;
+        strcpy(node->func.func, token.func);
+        node->func.arg = parse_expr(lexer);
+    } else if (token.type == TOKEN_LPAREN) {
+        node = parse_expr(lexer);
+        token = get_next_token(lexer); // Expecting ')'
+        if (token.type != TOKEN_RPAREN) {
+            fprintf(stderr, "Error: expected closing parenthesis\n");
+            exit(EXIT_FAILURE);
         }
     }
 
-    // Закрытие пути и рисование графика
-    fprintf(fp, "stroke\n");
-
-    // Конец документа
-    fprintf(fp, "showpage\n");
-    fprintf(fp, "%%%%EOF\n");
-
-    fclose(fp);
+    return node;
 }
 
-// Парсинг аргументов командной строки
-int parse_args(int argc, char *argv[], double *x_min, double *x_max, double *y_min, double *y_max, char **filename) {
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <function> <output_file> [x_min:x_max:y_min:y_max]\n", argv[0]);
-        return 1;
+Node* parse_term(Lexer* lexer) {
+    Node* node = parse_factor(lexer);
+    Token token = get_next_token(lexer);
+
+    while (token.type == TOKEN_MUL || token.type == TOKEN_DIV) {
+        Node* new_node = (Node*)malloc(sizeof(Node));
+        new_node->type = NODE_OP;
+        new_node->op.op = (token.type == TOKEN_MUL) ? '*' : '/';
+        new_node->op.left = node;
+        new_node->op.right = parse_factor(lexer);
+        node = new_node;
+        token = get_next_token(lexer);
     }
 
-    *filename = argv[2];
+    lexer->pos--; // Push back the last token
+    lexer->current_char = lexer->text[lexer->pos];
+    return node;
+}
 
-    // Разбор диапазонов
-    if (argc == 4) {
-        if (sscanf(argv[3], "%lf:%lf:%lf:%lf", x_min, x_max, y_min, y_max) != 4) {
-            fprintf(stderr, "Error: Invalid range format. Expected format: x_min:x_max:y_min:y_max\n");
-            return 4;
+Node* parse_expr(Lexer* lexer) {
+    Node* node = parse_term(lexer);
+    Token token = get_next_token(lexer);
+
+    while (token.type == TOKEN_PLUS || token.type == TOKEN_MINUS) {
+        Node* new_node = (Node*)malloc(sizeof(Node));
+        new_node->type = NODE_OP;
+        new_node->op.op = (token.type == TOKEN_PLUS) ? '+' : '-';
+        new_node->op.left = node;
+        new_node->op.right = parse_term(lexer);
+        node = new_node;
+        token = get_next_token(lexer);
+    }
+
+    lexer->pos--; // Push back the last token
+    lexer->current_char = lexer->text[lexer->pos];
+    return node;
+}
+
+double evaluate(Node* node) {
+    if (node->type == NODE_NUM) {
+        return node->num;
+    } else if (node->type == NODE_ID) {
+        return 0.0; // For simplicity, we return 0 for variables
+    } else if (node->type == NODE_FUNC) {
+        double arg_value = evaluate(node->func.arg);
+        if (strcmp(node->func.func, "cos") == 0) {
+            return cos(arg_value);
+        } else if (strcmp(node->func.func, "sin") == 0) {
+            return sin(arg_value);
+        } else if (strcmp(node->func.func, "tan") == 0) {
+            return tan(arg_value);
         }
-    } else {
-        *x_min = DEFAULT_X_MIN;
-        *x_max = DEFAULT_X_MAX;
-        *y_min = DEFAULT_Y_MIN;
-        *y_max = DEFAULT_Y_MAX;
+    } else if (node->type == NODE_OP) {
+        double left_value = evaluate(node->op.left);
+        double right_value = evaluate(node->op.right);
+        if (node->op.op == '+') {
+            return left_value + right_value;
+        } else if (node->op.op == '-') {
+            return left_value - right_value;
+        } else if (node->op.op == '*') {
+            return left_value * right_value;
+        } else if (node->op.op == '/') {
+            return left_value / right_value;
+        }
     }
 
-    return 0;
+    return 0.0; // Default return
 }
 
-int main(int argc, char *argv[]) {
-    double x_min, x_max, y_min, y_max;
-    char *output_file;
-
-    // Парсинг аргументов командной строки
-    int error_code = parse_args(argc, argv, &x_min, &x_max, &y_min, &y_max, &output_file);
-    if (error_code != 0) {
-        return error_code;
+void free_node(Node* node) {
+    if (node) {
+        if (node->type == NODE_OP) {
+            free_node(node->op.left);
+            free_node(node->op.right);
+        } else if (node->type == NODE_FUNC) {
+            free_node(node->func.arg);
+        }
+        free(node);
     }
+}
 
-    // Генерация PostScript файла
-    generate_postscript(output_file, x_min, x_max, y_min, y_max);
+int main() {
+    const char* expression = "cos(0) * sin(0) + 4"; // Example expression
+    Lexer* lexer = create_lexer(expression);
+    Node* syntax_tree = parse_expr(lexer);
+    double result = evaluate(syntax_tree);
 
-    printf("Graph saved to %s\n", output_file);
+    printf("Result: %f\n", result);
+
+    // Free memory
+    free_node(syntax_tree);
+    free(lexer);
+
     return 0;
 }
