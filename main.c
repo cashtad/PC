@@ -106,6 +106,8 @@ Token get_next_token(Lexer* lexer) {
                 }
                 advance(lexer);
             }
+
+            // printf("Token: NUM(%.6f)\n", token.num);
             return token;
         }
 
@@ -119,41 +121,50 @@ Token get_next_token(Lexer* lexer) {
                 advance(lexer);
             }
             token.func[len] = '\0';
+
             if (strcmp(token.func, "cos") == 0 || strcmp(token.func, "sin") == 0 || strcmp(token.func, "tan") == 0) {
                 token.type = TOKEN_FUNC;
+                //printf("Token: FUNC(%s)\n", token.func);
                 return token;
             }
             token.type = TOKEN_ID;
+            //printf("Token: ID(%s)\n", token.func);
             return token;
         }
 
         if (lexer->current_char == '+') {
             advance(lexer);
+            //printf("Token: PLUS\n");
             return (Token){ TOKEN_PLUS };
         }
 
         if (lexer->current_char == '-') {
             advance(lexer);
+            //printf("Token: MINUS\n");
             return (Token){ TOKEN_MINUS };
         }
 
         if (lexer->current_char == '*') {
             advance(lexer);
+            //printf("Token: MUL\n");
             return (Token){ TOKEN_MUL };
         }
 
         if (lexer->current_char == '/') {
             advance(lexer);
+            //printf("Token: DIV\n");
             return (Token){ TOKEN_DIV };
         }
 
         if (lexer->current_char == '(') {
             advance(lexer);
+            //printf("Token: LPAREN\n");
             return (Token){ TOKEN_LPAREN };
         }
 
         if (lexer->current_char == ')') {
             advance(lexer);
+            //printf("Token: RPAREN\n");
             return (Token){ TOKEN_RPAREN };
         }
 
@@ -161,6 +172,7 @@ Token get_next_token(Lexer* lexer) {
         exit(EXIT_FAILURE);
     }
 
+    //printf("Token: EOF\n");
     return (Token){ TOKEN_EOF };
 }
 
@@ -174,15 +186,30 @@ Node* parse_factor(Lexer* lexer) {
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_NUM;
         node->num = token.num;
+        //printf("Parsed number: %.6f\n", node->num);
     } else if (token.type == TOKEN_ID) {
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_ID;
         strcpy(node->id, token.id);
+        //printf("Parsed identifier: %s\n", node->id);
     } else if (token.type == TOKEN_FUNC) {
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_FUNC;
         strcpy(node->func.func, token.func);
-        node->func.arg = parse_expr(lexer);
+        //printf("Parsing function: %s\n", node->func.func);
+
+        token = get_next_token(lexer); // Expecting '('
+        if (token.type != TOKEN_LPAREN) {
+            fprintf(stderr, "Error: expected '(' after function '%s'\n", node->func.func);
+            exit(EXIT_FAILURE);
+        }
+        node->func.arg = parse_expr(lexer); // parse the argument for the function
+        token = get_next_token(lexer); // Expecting ')'
+        if (token.type != TOKEN_RPAREN) {
+            fprintf(stderr, "Error: expected closing parenthesis\n");
+            exit(EXIT_FAILURE);
+        }
+        //printf("Function %s parsed successfully with argument.\n", node->func.func);
     } else if (token.type == TOKEN_LPAREN) {
         node = parse_expr(lexer);
         token = get_next_token(lexer); // Expecting ')'
@@ -190,6 +217,9 @@ Node* parse_factor(Lexer* lexer) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
             exit(EXIT_FAILURE);
         }
+    } else {
+        fprintf(stderr, "Error: unexpected token\n");
+        exit(EXIT_FAILURE);
     }
 
     return node;
@@ -206,6 +236,7 @@ Node* parse_term(Lexer* lexer) {
         new_node->op.left = node;
         new_node->op.right = parse_factor(lexer);
         node = new_node;
+        //printf("Parsed term with operator: %c\n", new_node->op.op);
         token = get_next_token(lexer);
     }
 
@@ -225,6 +256,7 @@ Node* parse_expr(Lexer* lexer) {
         new_node->op.left = node;
         new_node->op.right = parse_term(lexer);
         node = new_node;
+        //printf("Parsed expression with operator: %c\n", new_node->op.op);
         token = get_next_token(lexer);
     }
 
@@ -237,56 +269,106 @@ double evaluate(Node* node) {
     if (node->type == NODE_NUM) {
         return node->num;
     } else if (node->type == NODE_ID) {
-        return 0.0; // For simplicity, we return 0 for variables
+        // Handle variables here if needed
+        return 0.0; // Placeholder
     } else if (node->type == NODE_FUNC) {
         double arg_value = evaluate(node->func.arg);
-        if (strcmp(node->func.func, "cos") == 0) {
-            return cos(arg_value);
-        } else if (strcmp(node->func.func, "sin") == 0) {
-            return sin(arg_value);
-        } else if (strcmp(node->func.func, "tan") == 0) {
-            return tan(arg_value);
+        double result;
+
+        if (strcmp(node->func.func, "sin") == 0) {
+            result = sin(arg_value);
+            //printf("Evaluating function: sin with argument: %.6f, result: %.6f\n", arg_value, result);
+        } else if (strcmp(node->func.func, "cos") == 0) {
+            result = cos(arg_value);
+            //printf("Evaluating function: cos with argument: %.6f, result: %.6f\n", arg_value, result);
+        } else {
+            fprintf(stderr, "Error: unknown function '%s'\n", node->func.func);
+            exit(EXIT_FAILURE);
         }
+        return result;
     } else if (node->type == NODE_OP) {
         double left_value = evaluate(node->op.left);
         double right_value = evaluate(node->op.right);
-        if (node->op.op == '+') {
-            return left_value + right_value;
-        } else if (node->op.op == '-') {
-            return left_value - right_value;
-        } else if (node->op.op == '*') {
-            return left_value * right_value;
-        } else if (node->op.op == '/') {
-            return left_value / right_value;
+        double result;
+
+        switch (node->op.op) {
+            case '+':
+                result = left_value + right_value;
+                //printf("Evaluating: %.6f + %.6f = %.6f\n", left_value, right_value, result);
+                break;
+            case '-':
+                result = left_value - right_value;
+                //printf("Evaluating: %.6f - %.6f = %.6f\n", left_value, right_value, result);
+                break;
+            case '*':
+                result = left_value * right_value;
+                //printf("Evaluating: %.6f * %.6f = %.6f\n", left_value, right_value, result);
+                break;
+            case '/':
+                result = left_value / right_value;
+                //printf("Evaluating: %.6f / %.6f = %.6f\n", left_value, right_value, result);
+                break;
+            default:
+                fprintf(stderr, "Error: unknown operator '%c'\n", node->op.op);
+                exit(EXIT_FAILURE);
         }
+        return result;
     }
 
-    return 0.0; // Default return
+    fprintf(stderr, "Error: unknown node type\n");
+    exit(EXIT_FAILURE);
 }
 
 void free_node(Node* node) {
-    if (node) {
-        if (node->type == NODE_OP) {
-            free_node(node->op.left);
-            free_node(node->op.right);
-        } else if (node->type == NODE_FUNC) {
-            free_node(node->func.arg);
-        }
-        free(node);
+    if (node == NULL) return;
+    if (node->type == NODE_OP) {
+        free_node(node->op.left);
+        free_node(node->op.right);
+    } else if (node->type == NODE_FUNC) {
+        free_node(node->func.arg);
     }
+    free(node);
 }
 
 int main() {
-    const char* expression = "cos(0) * sin(0) + 4"; // Example expression
-    Lexer* lexer = create_lexer(expression);
-    Node* syntax_tree = parse_expr(lexer);
-    double result = evaluate(syntax_tree);
+    const char* expressions[] = {
+        "sin(0) + cos(0)",       // 0 + 1 = 1
+        "2 * sin(0) + 4",        // 0 + 4 = 4
+        "cos(0) * sin(0)",       // 1 * 0 = 0
+        "sin(0) + 1",            // 0 + 1 = 1
+        "2 * (3 + 5)",           // 2 * 8 = 16
+        "10 - 2 * cos(0) + 5",   // 10 - 2 * 1 + 5 = 13
+        "3 + 5 * (2 + 1)",       // 3 + 15 = 18
+        "cos(0) + sin(0)",        // 1 + 0 = 1
+        "5 * 8 / (10 + 0) / (3 + 5) + 1 - 6 * (1 + 1) + 3 - 5 / 5",
+    };
 
-    printf("Result: %f\n", result);
+    const double expected_results[] = {
+        1.0,   // sin(0) + cos(0)
+        4.0,   // 2 * sin(0) + 4
+        0.0,   // cos(0) * sin(0)
+        1.0,   // sin(0) + 1
+        16.0,  // 2 * (3 + 5)
+        13.0,  // 10 - 2 * cos(0) + 5
+        18.0,  // 3 + 5 * (2 + 1)
+        1.0,    // cos(0) + sin(0)
+        -8.5   // 5 * 8 / (10 + 0) / (3 + 5) + 1 - 6 * (1 + 1) + 3 - 5 / 5
+    };
 
-    // Free memory
-    free_node(syntax_tree);
-    free(lexer);
+    size_t num_expressions = sizeof(expressions) / sizeof(expressions[0]);
+
+    for (size_t i = 0; i < num_expressions; i++) {
+        Lexer* lexer = create_lexer(expressions[i]);
+        Node* syntax_tree = parse_expr(lexer);
+        double result = evaluate(syntax_tree);
+
+        printf("Expression: %s | Expected: %.6f | Got: %.6f\n", expressions[i], expected_results[i], result);
+
+        // Free memory
+        free_node(syntax_tree);
+        free(lexer);
+    }
 
     return 0;
 }
+
