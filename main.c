@@ -3,6 +3,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <string.h>
+#include <time.h>
 
 // Token types
 typedef enum {
@@ -413,6 +414,8 @@ void free_node(Node* node) {
 
 // Main part of program, gets everything ready, uses test cases
 int main() {
+    clock_t start, end;
+    double cpu_time_used;
     const char* expressions[] = {
         "sin(0) + cos(0)",       // 1
         "2 * sin(0) + 4",        // 4
@@ -487,6 +490,7 @@ int main() {
     };
 
     size_t num_expressions = sizeof(expressions) / sizeof(expressions[0]);
+    start = clock();  // Старт замера времени
 
     for (size_t i = 0; i < num_expressions; i++) {
         Lexer* lexer = create_lexer(expressions[i]);
@@ -499,7 +503,10 @@ int main() {
         free_node(syntax_tree);
         free(lexer);
     }
+    end = clock();  // Конец замера времени
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;  // Время в секундах
 
+    printf("Время выполнения: %f секунд\n", cpu_time_used);
     return 0;
 }
 
