@@ -6,22 +6,22 @@
 
 // Token types
 typedef enum {
-    TOKEN_NUM,
-    TOKEN_ID,
-    TOKEN_FUNC,
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_MUL,
-    TOKEN_DIV,
-    TOKEN_LPAREN,
-    TOKEN_RPAREN,
-    TOKEN_POW,
-    TOKEN_EOF
+    TOKEN_NUM,      // Numeric token
+    TOKEN_ID,       // Identifier token (e.g., variable names)
+    TOKEN_FUNC,     // Function name token
+    TOKEN_PLUS,     // '+' operator token
+    TOKEN_MINUS,    // '-' operator token
+    TOKEN_MUL,      // '*' operator token
+    TOKEN_DIV,      // '/' operator token
+    TOKEN_LPAREN,   // Left parenthesis token '('
+    TOKEN_RPAREN,   // Right parenthesis token ')'
+    TOKEN_POW,      // '^' operator token (for exponentiation)
+    TOKEN_EOF       // End of input token
 } TokenType;
 
 // Token structure
 typedef struct {
-    TokenType type;
+    TokenType type; // Type of token
     union {
         double num;  // For numeric values
         char id[64]; // For variable identifiers
@@ -29,21 +29,21 @@ typedef struct {
     };
 } Token;
 
-// Lexer structure
+// Lexer structure to store the current state of lexical analysis
 typedef struct {
-    const char* text;
-    size_t pos;
-    char current_char;
+    const char* text;  // Input text being parsed
+    size_t pos;        // Current position in the text
+    char current_char; // Current character being analyzed
 } Lexer;
 
 // Node types for the abstract syntax tree (AST)
 typedef struct Node {
-    enum { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type;
+    enum { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type; // Node type (numeric, identifier, function, operator)
     union {
         double num; // For numeric values
         char id[64]; // For variable identifiers
-        struct { char func[64]; struct Node* arg; } func; // For functions
-        struct { char op; struct Node* left; struct Node* right; } op; // For operations
+        struct { char func[64]; struct Node* arg; } func; // For functions and their arguments
+        struct { char op; struct Node* left; struct Node* right; } op; // For binary operations
     };
 } Node;
 
@@ -66,21 +66,24 @@ Lexer* create_lexer(const char* text) {
     return lexer;
 }
 
+// Advances the lexer's position by one character
 void advance(Lexer* lexer) {
     lexer->pos++;
     if (lexer->pos < strlen(lexer->text)) {
         lexer->current_char = lexer->text[lexer->pos];
     } else {
-        lexer->current_char = '\0';
+        lexer->current_char = '\0';  // End of input
     }
 }
 
+// Skips whitespace characters in the input
 void skip_whitespace(Lexer* lexer) {
     while (lexer->current_char != '\0' && isspace(lexer->current_char)) {
         advance(lexer);
     }
 }
 
+// Extracts the next token from the input stream
 Token get_next_token(Lexer* lexer) {
     while (lexer->current_char != '\0') {
         if (isspace(lexer->current_char)) {
@@ -88,11 +91,13 @@ Token get_next_token(Lexer* lexer) {
             continue;
         }
 
+        // Handle numbers (including floating point)
         if (isdigit(lexer->current_char) || lexer->current_char == '.') {
             Token token = { TOKEN_NUM, .num = 0.0 };
             double fraction = 1.0;
             int is_fraction = 0;
 
+            // Handle both integer and floating-point parts
             while (isdigit(lexer->current_char) || lexer->current_char == '.') {
                 if (lexer->current_char == '.') {
                     is_fraction = 1; // Start of fractional part
@@ -112,6 +117,7 @@ Token get_next_token(Lexer* lexer) {
             return token;
         }
 
+        // Handle identifiers and function names
         if (isalpha(lexer->current_char)) {
             Token token;
             size_t len = 0;
@@ -123,6 +129,7 @@ Token get_next_token(Lexer* lexer) {
             }
             token.func[len] = '\0';
 
+            // Check if it's a recognized function
             if (strcmp(token.func, "cos") == 0 ||
                 strcmp(token.func, "sin") == 0 ||
                 strcmp(token.func, "tan") == 0 ||
@@ -144,6 +151,7 @@ Token get_next_token(Lexer* lexer) {
             return token;
         }
 
+        // Handle operators and parentheses
         if (lexer->current_char == '+') {
             advance(lexer);
             //printf("Token: PLUS\n");
@@ -185,6 +193,7 @@ Token get_next_token(Lexer* lexer) {
             return (Token){ TOKEN_POW };
         }
 
+        // Handle unknown characters
         fprintf(stderr, "Error: unknown character '%c'\n", lexer->current_char);
         exit(EXIT_FAILURE);
     }
@@ -193,46 +202,52 @@ Token get_next_token(Lexer* lexer) {
     return (Token){ TOKEN_EOF };
 }
 
+// Parses a full expression (supporting addition and subtraction)
 Node* parse_expr(Lexer* lexer);
 
+// Parses a factor (number, identifier, function, or parenthesized expression)
 Node* parse_factor(Lexer* lexer) {
     Token token = get_next_token(lexer);
     Node* node = NULL;
 
+    // Handle unary minus
     if (token.type == TOKEN_MINUS) {
-        // Обработка унарного минуса
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_OP;
         node->op.op = '-';
-        node->op.left = NULL; // У унарного оператора нет левого операнда
-        node->op.right = parse_factor(lexer); // Рекурсивно обрабатываем фактор справа
+        node->op.left = NULL; // // No left operand for unary operators
+        node->op.right = parse_factor(lexer); // Parse right operand
     } else if (token.type == TOKEN_NUM) {
+        // Handle numeric literals
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_NUM;
         node->num = token.num;
     } else if (token.type == TOKEN_ID) {
+        // Handle identifiers
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_ID;
         strcpy(node->id, token.id);
     } else if (token.type == TOKEN_FUNC) {
+        // Handle function calls
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_FUNC;
         strcpy(node->func.func, token.func);
 
-        token = get_next_token(lexer); // Ожидаем '('
+        token = get_next_token(lexer); // Expect '('
         if (token.type != TOKEN_LPAREN) {
             fprintf(stderr, "Error: expected '(' after function '%s'\n", node->func.func);
             exit(EXIT_FAILURE);
         }
-        node->func.arg = parse_expr(lexer); // Разбираем аргумент функции
-        token = get_next_token(lexer); // Ожидаем ')'
+        node->func.arg = parse_expr(lexer); // Parse function argument
+        token = get_next_token(lexer); // Expect ')'
         if (token.type != TOKEN_RPAREN) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
             exit(EXIT_FAILURE);
         }
     } else if (token.type == TOKEN_LPAREN) {
+        // Handle parenthesized expressions
         node = parse_expr(lexer);
-        token = get_next_token(lexer); // Ожидаем ')'
+        token = get_next_token(lexer); // Expect ')'
         if (token.type != TOKEN_RPAREN) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
             exit(EXIT_FAILURE);
@@ -246,21 +261,22 @@ Node* parse_factor(Lexer* lexer) {
 }
 
 
+// Parses a term
 Node* parse_term(Lexer* lexer) {
     Node* node = parse_factor(lexer);
     Token token = get_next_token(lexer);
 
+    // Handle multiplication, division, and exponentiation
     while (token.type == TOKEN_MUL || token.type == TOKEN_DIV || token.type == TOKEN_POW) {
         Node* new_node = (Node*)malloc(sizeof(Node));
         new_node->type = NODE_OP;
 
-        // Обработка операторов
         if (token.type == TOKEN_MUL) {
             new_node->op.op = '*';
         } else if (token.type == TOKEN_DIV) {
             new_node->op.op = '/';
         } else if (token.type == TOKEN_POW) {
-            new_node->op.op = '^'; // Для возведения в степень
+            new_node->op.op = '^';
         }
 
         new_node->op.left = node;
@@ -269,11 +285,12 @@ Node* parse_term(Lexer* lexer) {
         token = get_next_token(lexer);
     }
 
-    lexer->pos--; // Возврат последнего токена
+    lexer->pos--; // Return last token
     lexer->current_char = lexer->text[lexer->pos];
     return node;
 }
 
+// Parses a full expression
 Node* parse_expr(Lexer* lexer) {
     Node* node = parse_term(lexer);
     Token token = get_next_token(lexer);
@@ -294,6 +311,7 @@ Node* parse_expr(Lexer* lexer) {
     return node;
 }
 
+// Evaluates the abstract syntax tree (AST) recursively
 double evaluate(Node* node) {
     if (node->type == NODE_NUM) {
         return node->num;
@@ -304,6 +322,7 @@ double evaluate(Node* node) {
         double arg_value = evaluate(node->func.arg);
         double result;
 
+        // Handle standard mathematical functions
         if (strcmp(node->func.func, "sin") == 0) {
             result = sin(arg_value);
         } else if (strcmp(node->func.func, "cos") == 0) {
@@ -337,7 +356,7 @@ double evaluate(Node* node) {
         return result;
     } else if (node->type == NODE_OP) {
         if (node->op.left == NULL) {
-            // Унарный оператор
+            // Unarnian operator
             double right_value = evaluate(node->op.right);
             switch (node->op.op) {
                 case '-':
@@ -347,7 +366,7 @@ double evaluate(Node* node) {
                 exit(EXIT_FAILURE);
             }
         } else {
-            // Бинарный оператор
+            // Binary operator
             double left_value = evaluate(node->op.left);
             double right_value = evaluate(node->op.right);
             double result;
@@ -380,6 +399,7 @@ double evaluate(Node* node) {
     exit(EXIT_FAILURE);
 }
 
+// Frees memory used by the abstract syntax tree (AST)
 void free_node(Node* node) {
     if (node == NULL) return;
     if (node->type == NODE_OP) {
@@ -391,6 +411,7 @@ void free_node(Node* node) {
     free(node);
 }
 
+// Main part of program, gets everything ready, uses test cases
 int main() {
     const char* expressions[] = {
         "sin(0) + cos(0)",       // 1
@@ -417,7 +438,15 @@ int main() {
         "sin (0 ^2)+cos(0 / 2.0)", //  1
         "-3 + 5 - 3",              // -1
         "15 + (-5) * 3 + 1",       // 1
-        "-10 + 3 ^ (-1) + 10 "    // 0.333333
+        "-10 + 3 ^ (-1) + 10",    // 0.333333
+        "2 + 3 * 4", // 14
+        "(2 + 3) * 4", // 20
+        "5 - 2^3 + 4", // 1
+        "(10 - 3) / (2 + 1) ", // 2.333333
+        "(2^3 - 1) / 2 + 5", // 8.5
+        "(3 + 2) * (5 - 4) + 10 / 2", // 10
+        "cos(0)^2 + sin(0)^2", // 1
+        "log(10) + 5 * (2 + cos(0))", // 16
     };
 
     const double expected_results[] = {
@@ -446,6 +475,14 @@ int main() {
         -1,    // -3 + 5 - 3
         1,     // 15 + (-5) * 3 + 1
         0.333333, // -10 + 3 ^ (-1) + 10
+        14, // 2 + 3 * 4
+        20, // (2 + 3) * 4
+        1, // 5 - 2^3 + 4
+        2.333333, // (10 - 3) / (2 + 1)
+        8.5, // (2^3 - 1) / 2 + 5
+        10, // (3 + 2) * (5 - 4) + 10 / 2
+        1, // cos(0)^2 + sin(0)^2
+        16, // log(10) + 5 * (2 + cos(0))
 
     };
 
