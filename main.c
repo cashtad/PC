@@ -15,7 +15,7 @@ typedef enum {
     TOKEN_DIV,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
-    TOKEN_POW, // Новый токен для возведения в степень
+    TOKEN_POW,
     TOKEN_EOF
 } TokenType;
 
@@ -199,37 +199,40 @@ Node* parse_factor(Lexer* lexer) {
     Token token = get_next_token(lexer);
     Node* node = NULL;
 
-    if (token.type == TOKEN_NUM) {
+    if (token.type == TOKEN_MINUS) {
+        // Обработка унарного минуса
+        node = (Node*)malloc(sizeof(Node));
+        node->type = NODE_OP;
+        node->op.op = '-';
+        node->op.left = NULL; // У унарного оператора нет левого операнда
+        node->op.right = parse_factor(lexer); // Рекурсивно обрабатываем фактор справа
+    } else if (token.type == TOKEN_NUM) {
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_NUM;
         node->num = token.num;
-        //printf("Parsed number: %.6f\n", node->num);
     } else if (token.type == TOKEN_ID) {
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_ID;
         strcpy(node->id, token.id);
-        //printf("Parsed identifier: %s\n", node->id);
     } else if (token.type == TOKEN_FUNC) {
         node = (Node*)malloc(sizeof(Node));
         node->type = NODE_FUNC;
         strcpy(node->func.func, token.func);
-        //printf("Parsing function: %s\n", node->func.func);
 
-        token = get_next_token(lexer); // Expecting '('
+        token = get_next_token(lexer); // Ожидаем '('
         if (token.type != TOKEN_LPAREN) {
             fprintf(stderr, "Error: expected '(' after function '%s'\n", node->func.func);
             exit(EXIT_FAILURE);
         }
-        node->func.arg = parse_expr(lexer); // parse the argument for the function
-        token = get_next_token(lexer); // Expecting ')'
+        node->func.arg = parse_expr(lexer); // Разбираем аргумент функции
+        token = get_next_token(lexer); // Ожидаем ')'
         if (token.type != TOKEN_RPAREN) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
             exit(EXIT_FAILURE);
         }
-        //printf("Function %s parsed successfully with argument.\n", node->func.func);
     } else if (token.type == TOKEN_LPAREN) {
         node = parse_expr(lexer);
-        token = get_next_token(lexer); // Expecting ')'
+        token = get_next_token(lexer); // Ожидаем ')'
         if (token.type != TOKEN_RPAREN) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
             exit(EXIT_FAILURE);
@@ -241,6 +244,7 @@ Node* parse_factor(Lexer* lexer) {
 
     return node;
 }
+
 
 Node* parse_term(Lexer* lexer) {
     Node* node = parse_factor(lexer);
@@ -332,31 +336,44 @@ double evaluate(Node* node) {
         }
         return result;
     } else if (node->type == NODE_OP) {
-        double left_value = evaluate(node->op.left);
-        double right_value = evaluate(node->op.right);
-        double result;
+        if (node->op.left == NULL) {
+            // Унарный оператор
+            double right_value = evaluate(node->op.right);
+            switch (node->op.op) {
+                case '-':
+                    return -right_value;
+                default:
+                    fprintf(stderr, "Error: unknown unary operator '%c'\n", node->op.op);
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            // Бинарный оператор
+            double left_value = evaluate(node->op.left);
+            double right_value = evaluate(node->op.right);
+            double result;
 
-        switch (node->op.op) {
-            case '+':
-                result = left_value + right_value;
-            break;
-            case '-':
-                result = left_value - right_value;
-            break;
-            case '*':
-                result = left_value * right_value;
-            break;
-            case '/':
-                result = left_value / right_value;
-            break;
-            case '^': // Обработка возведения в степень
-                result = pow(left_value, right_value);
-            break;
-            default:
-                fprintf(stderr, "Error: unknown operator '%c'\n", node->op.op);
-            exit(EXIT_FAILURE);
+            switch (node->op.op) {
+                case '+':
+                    result = left_value + right_value;
+                break;
+                case '-':
+                    result = left_value - right_value;
+                break;
+                case '*':
+                    result = left_value * right_value;
+                break;
+                case '/':
+                    result = left_value / right_value;
+                break;
+                case '^':
+                    result = pow(left_value, right_value);
+                break;
+                default:
+                    fprintf(stderr, "Error: unknown binary operator '%c'\n", node->op.op);
+                exit(EXIT_FAILURE);
+            }
+            return result;
         }
-        return result;
     }
 
     fprintf(stderr, "Error: unknown node type\n");
@@ -397,7 +414,10 @@ int main() {
         "2^3 + 1",                // 9
         "3 + 2^2 * 2",            // 11
         "sin (0 ^2)*cos(0 / 2.0)", // 0
-        "sin (0 ^2)+cos(0 / 2.0)" //  1
+        "sin (0 ^2)+cos(0 / 2.0)", //  1
+        "-3 + 5 - 3",              // -1
+        "15 + (-5) * 3 + 1",       // 1
+        "-10 + 3 ^ (-1) + 10 "    // 0.333333
     };
 
     const double expected_results[] = {
@@ -423,6 +443,9 @@ int main() {
         11,     // 3 + 2^2 * 2
         0,      // sin (0 ˆ2)*cos(0 / 2.0)
         1,     // sin (0 ˆ2)+cos(0 / 2.0)
+        -1,    // -3 + 5 - 3
+        1,     // 15 + (-5) * 3 + 1
+        0.333333, // -10 + 3 ^ (-1) + 10
 
     };
 
