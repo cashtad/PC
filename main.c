@@ -48,6 +48,19 @@ typedef struct Node {
     };
 } Node;
 
+typedef struct {
+    double x_min;
+    double x_max;
+    double y_min;
+    double y_max;
+} Limits;
+
+Limits parse_limits(const char* limits_str) {
+    Limits limits = {-10, 10, -10, 10};  // Значения по умолчанию
+    sscanf(limits_str, "%lf:%lf:%lf:%lf", &limits.x_min, &limits.x_max, &limits.y_min, &limits.y_max);
+    return limits;
+}
+
 // Function prototypes
 Lexer* create_lexer(const char* text);
 void advance(Lexer* lexer);
@@ -412,101 +425,123 @@ void free_node(Node* node) {
     free(node);
 }
 
+char* replace_x_in_function(const char* function_str, double number) {
+    char number_str[32];
+    snprintf(number_str, sizeof(number_str), "%.2f", number);  // Преобразуем число в строку с точностью до 2 знаков
+
+    // Вычисляем новый размер строки: заменяем каждый 'x' на длину number_str
+    int new_len = 0;
+    for (int i = 0; function_str[i] != '\0'; i++) {
+        new_len += (function_str[i] == 'x') ? strlen(number_str) : 1;
+    }
+
+    // Выделяем память для новой строки
+    char* result = (char*)malloc(new_len + 1);  // +1 для завершающего нуля
+    if (!result) {
+        return NULL;  // Проверка на успешное выделение памяти
+    }
+
+    // Заполняем новую строку, заменяя 'x' на number_str
+    int pos = 0;
+    for (int i = 0; function_str[i] != '\0'; i++) {
+        if (function_str[i] == 'x') {
+            strcpy(&result[pos], number_str);  // Вставляем number_str на место 'x'
+            pos += strlen(number_str);
+        } else {
+            result[pos++] = function_str[i];  // Копируем символ, если это не 'x'
+        }
+    }
+    result[pos] = '\0';  // Завершаем строку
+
+    return result;
+}
+
 // Main part of program, gets everything ready, uses test cases
-int main() {
+int main(int argc, char* argv[]) {
     clock_t start, end;
     double cpu_time_used;
-    const char* expressions[] = {
-        "sin(0) + cos(0)",       // 1
-        "2 * sin(0) + 4",        // 4
-        "cos(0) * sin(0)",       // 0
-        "sin(0) + 1",            // 1
-        "2 * (3 + 5)",           // 16
-        "10 - 2 * cos(0) + 5",   // 13
-        "3 + 5 * (2 + 1)",       // 18
-        "abs(5)",               // 5
-        "ln(1)",                 // 0
-        "log(10)",               // 1
-        "tan(0)",                // 0
-        "asin(0)",               // 0
-        "acos(1)",               // 0
-        "atan(1)",               // π/4
-        "sinh(0)",               // 0
-        "cosh(0)",               // 1
-        "tanh(0)",               // 0
-        "exp(0)",                 // 1
-        "2^3 + 1",                // 9
-        "3 + 2^2 * 2",            // 11
-        "sin (0 ^2)*cos(0 / 2.0)", // 0
-        "sin (0 ^2)+cos(0 / 2.0)", //  1
-        "-3 + 5 - 3",              // -1
-        "15 + (-5) * 3 + 1",       // 1
-        "-10 + 3 ^ (-1) + 10",    // 0.333333
-        "2 + 3 * 4", // 14
-        "(2 + 3) * 4", // 20
-        "5 - 2^3 + 4", // 1
-        "(10 - 3) / (2 + 1) ", // 2.333333
-        "(2^3 - 1) / 2 + 5", // 8.5
-        "(3 + 2) * (5 - 4) + 10 / 2", // 10
-        "cos(0)^2 + sin(0)^2", // 1
-        "log(10) + 5 * (2 + cos(0))", // 16
-    };
 
-    const double expected_results[] = {
-        1.0,   // sin(0) + cos(0)
-        4.0,   // 2 * sin(0) + 4
-        0.0,   // cos(0) * sin(0)
-        1.0,   // sin(0) + 1
-        16.0,  // 2 * (3 + 5)
-        13.0,  // 10 - 2 * cos(0) + 5
-        18.0,  // 3 + 5 * (2 + 1)
-        5.0,   // abs(-5)
-        0.0,   // ln(1)
-        1.0,   // log(10)
-        0.0,   // tan(0)
-        0.0,   // asin(0)
-        0.0,   // acos(1)
-        M_PI / 4, // atan(1)
-        0.0,   // sinh(0)
-        1.0,   // cosh(0)
-        0.0,   // tanh(0)
-        1.0,    // exp(0)
-        9,      // 2^3 + 1
-        11,     // 3 + 2^2 * 2
-        0,      // sin (0 ˆ2)*cos(0 / 2.0)
-        1,     // sin (0 ˆ2)+cos(0 / 2.0)
-        -1,    // -3 + 5 - 3
-        1,     // 15 + (-5) * 3 + 1
-        0.333333, // -10 + 3 ^ (-1) + 10
-        14, // 2 + 3 * 4
-        20, // (2 + 3) * 4
-        1, // 5 - 2^3 + 4
-        2.333333, // (10 - 3) / (2 + 1)
-        8.5, // (2^3 - 1) / 2 + 5
-        10, // (3 + 2) * (5 - 4) + 10 / 2
-        1, // cos(0)^2 + sin(0)^2
-        16, // log(10) + 5 * (2 + cos(0))
+    // Проверка на обязательные параметры
+    if (argc < 3) {
+        fprintf(stderr, "Использование: %s <expression> <output_file> [limits]\n", argv[0]);
+        return 1;
+    }
 
-    };
+    const char* expression = argv[1];
+    const char* output_file = argv[2];
+    Limits limits = {-10, 10, -10, 10};  // Значения по умолчанию
 
-    size_t num_expressions = sizeof(expressions) / sizeof(expressions[0]);
+    // Проверка на наличие третьего параметра limits
+    if (argc == 4) {
+        limits = parse_limits(argv[3]);
+    }
+
+    printf("Expression: %s\n", expression);
+    printf("Output file: %s\n", output_file);
+    printf("Limits: x_min=%.2f, x_max=%.2f, y_min=%.2f, y_max=%.2f\n",
+           limits.x_min, limits.x_max, limits.y_min, limits.y_max);
+
     start = clock();  // Старт замера времени
 
-    for (size_t i = 0; i < num_expressions; i++) {
-        Lexer* lexer = create_lexer(expressions[i]);
+    // Открываем .ps файл для записи
+    FILE* file = fopen(output_file, "w");
+    if (!file) {
+        fprintf(stderr, "Не удалось открыть файл для записи: %s\n", output_file);
+        return 1;
+    }
+
+    // Пишем заголовок PostScript файла
+    fprintf(file, "%%!PS-Adobe-3.0\n");
+    fprintf(file, "%%BoundingBox: %d %d %d %d\n", 0, 0, 500, 500);
+    fprintf(file, "/x_min %f def\n/x_max %f def\n", limits.x_min, limits.x_max);
+    fprintf(file, "/y_min %f def\n/y_max %f def\n", limits.y_min, limits.y_max);
+    fprintf(file, "/x_scale 500 x_max x_min sub div def\n");
+    fprintf(file, "/y_scale 500 y_max y_min sub div def\n");
+    fprintf(file, "/translate { %d %d translate } def\n", 250, 250);
+    fprintf(file, "0.5 setlinewidth\n");
+
+    // Начало пути для графика функции
+    fprintf(file, "newpath\n");
+
+    // Вычисление и запись точек графика
+    int first_point = 1;
+    for (float x = limits.x_min; x <= limits.x_max; x += 0.01) {
+        // Замена 'x' в выражении на текущее значение x
+        char* expression_new = replace_x_in_function(expression, x);
+        Lexer* lexer = create_lexer(expression_new);
         Node* syntax_tree = parse_expr(lexer);
         double result = evaluate(syntax_tree);
 
-        printf("Expression: %s | Expected: %.6f | Got: %.6f\n", expressions[i], expected_results[i], result);
+        // Проверка, попадает ли результат в пределы y
+        if (result >= limits.y_min && result <= limits.y_max) {
+            // Преобразование координат в координаты для PostScript
+            double x_pos = (x - limits.x_min) * (500 / (limits.x_max - limits.x_min));
+            double y_pos = (result - limits.y_min) * (500 / (limits.y_max - limits.y_min));
 
-        // Free memory
+            if (first_point) {
+                fprintf(file, "%.2f %.2f moveto\n", x_pos, y_pos);
+                first_point = 0;
+            } else {
+                fprintf(file, "%.2f %.2f lineto\n", x_pos, y_pos);
+            }
+        }
+
+        // Освобождение памяти
+        free(expression_new);
         free_node(syntax_tree);
         free(lexer);
     }
-    end = clock();  // Конец замера времени
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;  // Время в секундах
 
+    // Завершение пути и рисование графика
+    fprintf(file, "stroke\n");
+    fprintf(file, "showpage\n");
+
+    fclose(file);
+
+    end = clock();  // Конец замера времени
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("Время выполнения: %f секунд\n", cpu_time_used);
+
     return 0;
 }
 
