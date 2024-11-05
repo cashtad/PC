@@ -6,7 +6,7 @@
 #include <time.h>
 
 // Token types
-typedef enum {
+typedef enum TokenType {
     TOKEN_NUM,      // Numeric token
     TOKEN_ID,       // Identifier token (e.g., variable names)
     TOKEN_FUNC,     // Function name token
@@ -21,7 +21,7 @@ typedef enum {
 } TokenType;
 
 // Token structure
-typedef struct {
+typedef struct Token {
     TokenType type; // Type of token
     union {
         double num;  // For numeric values
@@ -31,7 +31,7 @@ typedef struct {
 } Token;
 
 // Lexer structure to store the current state of lexical analysis
-typedef struct {
+typedef struct Lexer {
     const char* text;  // Input text being parsed
     size_t pos;        // Current position in the text
     char current_char; // Current character being analyzed
@@ -39,7 +39,7 @@ typedef struct {
 
 // Node types for the abstract syntax tree (AST)
 typedef struct Node {
-    enum { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type; // Node type (numeric, identifier, function, operator)
+    enum type { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type; // Node type (numeric, identifier, function, operator)
     union {
         double num; // For numeric values
         char id[64]; // For variable identifiers
@@ -48,7 +48,7 @@ typedef struct Node {
     };
 } Node;
 
-typedef struct {
+typedef struct Limits {
     double x_min;
     double x_max;
     double y_min;
