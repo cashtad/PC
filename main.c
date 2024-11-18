@@ -490,18 +490,56 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Пишем заголовок PostScript файла
-    fprintf(file, "%%!PS-Adobe-3.0\n");
-    fprintf(file, "%%BoundingBox: %d %d %d %d\n", 0, 0, 500, 500);
-    fprintf(file, "/x_min %f def\n/x_max %f def\n", limits.x_min, limits.x_max);
-    fprintf(file, "/y_min %f def\n/y_max %f def\n", limits.y_min, limits.y_max);
-    fprintf(file, "/x_scale 500 x_max x_min sub div def\n");
-    fprintf(file, "/y_scale 500 y_max y_min sub div def\n");
-    fprintf(file, "/translate { %d %d translate } def\n", 250, 250);
-    fprintf(file, "0.5 setlinewidth\n");
+    fprintf(file, "%%!PS-Adobe-2.0\n");
+    fprintf(file, "%%%%Title: Function graph %s\n", expression);
+    fprintf(file, "%%%%Creator: C Program\n");
+    fprintf(file, "%%%%Pages: 1\n");
+    fprintf(file, "%%%%BoundingBox: 0 0 500 500\n");
+    fprintf(file, "%%%%EndComments\n\n");
 
-    // Начало пути для графика функции
+    // Set line width
+    fprintf(file, "1 setlinewidth\n");
+
+    // Square field 400x400 in the center of a 500x500 page
+    int margin = 30;  // Margin from the edges of the page
+    int size = 513;   // Size of the square for the coordinate plane
+
+    // X and Y axis zero positions
+    double x_zero = margin + (0 - limits.x_min) / (limits.x_max - limits.x_min) * size;
+    double y_zero = margin + (0 - limits.y_min) / (limits.y_max - limits.y_min) * size;
+
+    // Set color to red
+    fprintf(file, "1 0 0 setrgbcolor\n");
+
+    // Draw X axis
+    fprintf(file, "newpath\n%lf %d moveto\n%lf %d lineto\nstroke\n", x_zero, margin, x_zero, margin + size);
+    // Draw Y axis
+    fprintf(file, "newpath\n%d %lf moveto\n%d %lf lineto\nstroke\n", margin, y_zero, margin + size, y_zero);
+
+    // Draw the border around the coordinate plane
+    fprintf(file, "newpath\n%d %d moveto\n%d %d lineto\n%d %d lineto\n%d %d lineto\nclosepath\nstroke\n",
+        margin, margin,
+        margin + size, margin,
+        margin + size, margin + size,
+        margin, margin + size);
+
+    // Axis labels
+    fprintf(file, "/Helvetica findfont 10 scalefont setfont\n");
+
+    // Set color to black
+    fprintf(file, "0 0 0 setrgbcolor\n");
+
+    // Draw min and max X labels on the borders
+    fprintf(file, "%d %d moveto (%lf) show\n", margin, margin - 20, limits.x_min); // bottom-left corner (min x)
+    fprintf(file, "%d %d moveto (%lf) show\n", margin + size, margin - 20, limits.x_max); // bottom-right corner (max x)
+
+    // Draw min and max Y labels on the borders
+    fprintf(file, "%d %d moveto (%lf) show\n", margin - 30, margin, limits.y_min); // bottom-left corner (min y)
+    fprintf(file, "%d %d moveto (%lf) show\n", margin - 30, margin + size, limits.y_max); // top-left corner (max y)
+
+    // Draw the function graph
     fprintf(file, "newpath\n");
+
 
     // Вычисление и запись точек графика
     int first_point = 1;
@@ -515,8 +553,8 @@ int main(int argc, char* argv[]) {
         // Проверка, попадает ли результат в пределы y
         if (result >= limits.y_min && result <= limits.y_max) {
             // Преобразование координат в координаты для PostScript
-            double x_pos = (x - limits.x_min) * (500 / (limits.x_max - limits.x_min));
-            double y_pos = (result - limits.y_min) * (500 / (limits.y_max - limits.y_min));
+            double x_pos = margin + (x - limits.x_min) * (500 / (limits.x_max - limits.x_min));
+            double y_pos = margin + (result - limits.y_min) * (500 / (limits.y_max - limits.y_min));
 
             if (first_point) {
                 fprintf(file, "%.2f %.2f moveto\n", x_pos, y_pos);
