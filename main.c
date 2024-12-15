@@ -56,7 +56,7 @@ typedef struct Limits {
 } Limits;
 
 Limits parse_limits(const char* limits_str) {
-    Limits limits = {-10, 10, -10, 10};  // Значения по умолчанию
+    Limits limits = {-10, 10, -10, 10};  // Default values, if user do not identify them it args
     sscanf(limits_str, "%lf:%lf:%lf:%lf", &limits.x_min, &limits.x_max, &limits.y_min, &limits.y_max);
     return limits;
 }
@@ -69,9 +69,10 @@ Token get_next_token(Lexer* lexer);
 Node* parse_expr(Lexer* lexer);
 Node* parse_factor(Lexer* lexer);
 Node* parse_term(Lexer* lexer);
-double evaluate(Node* node);
+double evaluate(Node* node, double x_value);
 void free_node(Node* node);
 
+// Lexer functions
 Lexer* create_lexer(const char* text) {
     Lexer* lexer = (Lexer*)malloc(sizeof(Lexer));
     lexer->text = text;
@@ -216,7 +217,7 @@ Token get_next_token(Lexer* lexer) {
     return (Token){ TOKEN_EOF };
 }
 
-// Parses a full expression (supporting addition and subtraction)
+//Parses a full expression
 Node* parse_expr(Lexer* lexer);
 
 // Parses a factor (number, identifier, function, or parenthesized expression)
@@ -270,7 +271,6 @@ Node* parse_factor(Lexer* lexer) {
         fprintf(stderr, "Error: unexpected token\n");
         exit(EXIT_FAILURE);
     }
-
     return node;
 }
 
@@ -325,15 +325,20 @@ Node* parse_expr(Lexer* lexer) {
     return node;
 }
 
-// Evaluates the abstract syntax tree (AST) recursively
-double evaluate(Node* node) {
+// Evaluate expression with `x`
+double evaluate(Node* node, double x_value) {
     if (node->type == NODE_NUM) {
         return node->num;
+    } else if (node->type == NODE_ID) {
+            if (strcmp(node->id, "x") == 0) {
+                return x_value;
+            }
+            return 0.0; // Default value for unknown variable
     } else if (node->type == NODE_ID) {
         // Handle variables here if needed
         return 0.0; // Placeholder
     } else if (node->type == NODE_FUNC) {
-        double arg_value = evaluate(node->func.arg);
+        double arg_value = evaluate(node->func.arg, x_value);
         double result;
 
         // Handle standard mathematical functions
@@ -371,7 +376,7 @@ double evaluate(Node* node) {
     } else if (node->type == NODE_OP) {
         if (node->op.left == NULL) {
             // Unarnian operator
-            double right_value = evaluate(node->op.right);
+            double right_value = evaluate(node->op.right, x_value);
             switch (node->op.op) {
                 case '-':
                     return -right_value;
@@ -381,8 +386,8 @@ double evaluate(Node* node) {
             }
         } else {
             // Binary operator
-            double left_value = evaluate(node->op.left);
-            double right_value = evaluate(node->op.right);
+            double left_value = evaluate(node->op.left, x_value);
+            double right_value = evaluate(node->op.right, x_value);
             double result;
 
             switch (node->op.op) {
@@ -425,38 +430,7 @@ void free_node(Node* node) {
     free(node);
 }
 
-char* replace_x_in_function(const char* function_str, double number) {
-    char number_str[32];
-    snprintf(number_str, sizeof(number_str), "%.2f", number);  // Преобразуем число в строку с точностью до 2 знаков
-
-    // Вычисляем новый размер строки: заменяем каждый 'x' на длину number_str
-    int new_len = 0;
-    for (int i = 0; function_str[i] != '\0'; i++) {
-        new_len += (function_str[i] == 'x') ? strlen(number_str) : 1;
-    }
-
-    // Выделяем память для новой строки
-    char* result = (char*)malloc(new_len + 1);  // +1 для завершающего нуля
-    if (!result) {
-        return NULL;  // Проверка на успешное выделение памяти
-    }
-
-    // Заполняем новую строку, заменяя 'x' на number_str
-    int pos = 0;
-    for (int i = 0; function_str[i] != '\0'; i++) {
-        if (function_str[i] == 'x') {
-            strcpy(&result[pos], number_str);  // Вставляем number_str на место 'x'
-            pos += strlen(number_str);
-        } else {
-            result[pos++] = function_str[i];  // Копируем символ, если это не 'x'
-        }
-    }
-    result[pos] = '\0';  // Завершаем строку
-
-    return result;
-}
-
-// Main part of program, gets everything ready, uses test cases
+// Main function
 int main(int argc, char* argv[]) {
     clock_t start, end;
     double cpu_time_used;
@@ -490,96 +464,30 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    fprintf(file, "%%!PS-Adobe-2.0\n");
-    fprintf(file, "%%%%Title: Function graph %s\n", expression);
-    fprintf(file, "%%%%Creator: C Program\n");
-    fprintf(file, "%%%%Pages: 1\n");
-    fprintf(file, "%%%%BoundingBox: 0 0 500 500\n");
-    fprintf(file, "%%%%EndComments\n\n");
+    Lexer* lexer = create_lexer(expression);
+    Node* root = parse_expr(lexer);
+    free(lexer);
 
-    // Set line width
-    fprintf(file, "1 setlinewidth\n");
-
-    // Square field 400x400 in the center of a 500x500 page
-    int margin = 30;  // Margin from the edges of the page
-    int size = 513;   // Size of the square for the coordinate plane
-
-    // X and Y axis zero positions
-    double x_zero = margin + (0 - limits.x_min) / (limits.x_max - limits.x_min) * size;
-    double y_zero = margin + (0 - limits.y_min) / (limits.y_max - limits.y_min) * size;
-
-    // Set color to red
-    fprintf(file, "1 0 0 setrgbcolor\n");
-
-    // Draw X axis
-    fprintf(file, "newpath\n%lf %d moveto\n%lf %d lineto\nstroke\n", x_zero, margin, x_zero, margin + size);
-    // Draw Y axis
-    fprintf(file, "newpath\n%d %lf moveto\n%d %lf lineto\nstroke\n", margin, y_zero, margin + size, y_zero);
-
-    // Draw the border around the coordinate plane
-    fprintf(file, "newpath\n%d %d moveto\n%d %d lineto\n%d %d lineto\n%d %d lineto\nclosepath\nstroke\n",
-        margin, margin,
-        margin + size, margin,
-        margin + size, margin + size,
-        margin, margin + size);
-
-    // Axis labels
-    fprintf(file, "/Helvetica findfont 10 scalefont setfont\n");
-
-    // Set color to black
-    fprintf(file, "0 0 0 setrgbcolor\n");
-
-    // Draw min and max X labels on the borders
-    fprintf(file, "%d %d moveto (%lf) show\n", margin, margin - 20, limits.x_min); // bottom-left corner (min x)
-    fprintf(file, "%d %d moveto (%lf) show\n", margin + size, margin - 20, limits.x_max); // bottom-right corner (max x)
-
-    // Draw min and max Y labels on the borders
-    fprintf(file, "%d %d moveto (%lf) show\n", margin - 30, margin, limits.y_min); // bottom-left corner (min y)
-    fprintf(file, "%d %d moveto (%lf) show\n", margin - 30, margin + size, limits.y_max); // top-left corner (max y)
-
-    // Draw the function graph
-    fprintf(file, "newpath\n");
-
-
-    // Вычисление и запись точек графика
     int first_point = 1;
-    for (float x = limits.x_min; x <= limits.x_max; x += 0.01) {
-        // Замена 'x' в выражении на текущее значение x
-        char* expression_new = replace_x_in_function(expression, x);
-        Lexer* lexer = create_lexer(expression_new);
-        Node* syntax_tree = parse_expr(lexer);
-        double result = evaluate(syntax_tree);
+    for (double x = limits.x_min; x <= limits.x_max; x += 0.01) {
+        const double y = evaluate(root, x);
 
-        // Проверка, попадает ли результат в пределы y
-        if (result >= limits.y_min && result <= limits.y_max) {
-            // Преобразование координат в координаты для PostScript
-            double x_pos = margin + (x - limits.x_min) * (500 / (limits.x_max - limits.x_min));
-            double y_pos = margin + (result - limits.y_min) * (500 / (limits.y_max - limits.y_min));
-
+        if (y >= limits.y_min && y <= limits.y_max) {
             if (first_point) {
-                fprintf(file, "%.2f %.2f moveto\n", x_pos, y_pos);
+                fprintf(file, "%.2f %.2f moveto\n", x, y);
+
                 first_point = 0;
             } else {
-                fprintf(file, "%.2f %.2f lineto\n", x_pos, y_pos);
+                fprintf(file, "%.2f %.2f lineto\n", x, y);
             }
         }
-
-        // Освобождение памяти
-        free(expression_new);
-        free_node(syntax_tree);
-        free(lexer);
     }
-
-    // Завершение пути и рисование графика
-    fprintf(file, "stroke\n");
-    fprintf(file, "showpage\n");
 
     fclose(file);
 
     end = clock();  // Конец замера времени
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("Time spent: %f секунд\n", cpu_time_used);
+    printf("Time spent: %f seconds\n", cpu_time_used);
 
     return 0;
 }
-
