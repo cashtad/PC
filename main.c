@@ -578,7 +578,7 @@ int main(int argc, char* argv[]) {
 
     end = clock();  // Конец замера времени
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("Время выполнения: %f секунд\n", cpu_time_used);
+    printf("Time: %f seconds\n", cpu_time_used);
 
     return 0;
 }
