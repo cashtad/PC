@@ -55,6 +55,8 @@ typedef struct Limits {
     double y_max;
 } Limits;
 
+
+//TODO RETURN 1 IF ERR
 Limits parse_limits(const char* limits_str) {
     Limits limits = {-10, 10, -10, 10};  // Default values, if user do not identify them it args
     sscanf(limits_str, "%lf:%lf:%lf:%lf", &limits.x_min, &limits.x_max, &limits.y_min, &limits.y_max);
@@ -430,6 +432,8 @@ void free_node(Node* node) {
     free(node);
 }
 
+
+
 // Main function
 int main(int argc, char* argv[]) {
     clock_t start, end;
@@ -455,6 +459,8 @@ int main(int argc, char* argv[]) {
     printf("Limits: x_min=%.2f, x_max=%.2f, y_min=%.2f, y_max=%.2f\n",
            limits.x_min, limits.x_max, limits.y_min, limits.y_max);
 
+
+
     start = clock();  // Старт замера времени
 
     // Открываем .ps файл для записи
@@ -464,6 +470,42 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+
+    double page_width = 595.0;  // Ширина страницы A4
+    double page_height = 842.0; // Высота страницы A4
+
+    fprintf(file, "%%PageSetup\n");
+    fprintf(file, "<< /PageSize [%f %f] >> setpagedevice\n", page_width, page_height);
+
+    // Масштабирование
+    double scale_x = (page_width - 100) / (limits.x_max - limits.x_min);  // Масштаб по оси X
+    double scale_y = (page_height - 100) / (limits.y_max - limits.y_min);           // Масштаб по оси Y
+
+    // Печать заголовка PostScript
+    fprintf(file, "%%!PS\n");
+    fprintf(file, "/inch {72 mul} def\n");
+
+    // Сдвиг начала координат в центр страницы
+    fprintf(file, "%f %f translate\n", page_width / 2, page_height / 2);
+
+    // Инвертирование оси Y (для правильной ориентации графика)
+    fprintf(file, "1 -1 scale\n");
+
+    fprintf(file, "1 0 0 setrgbcolor\n");
+
+
+    fprintf(file, "%f %f moveto\n", (limits.x_min) * scale_x, 0.0);
+    fprintf(file, "%f %f lineto\n", (limits.x_max) * scale_x, 0.0);
+    fprintf(file, "stroke\n");
+
+    fprintf(file, "%f %f moveto\n", 0.0, (limits.y_min) * scale_y);
+    fprintf(file, "%f %f lineto\n", 0.0, (limits.y_max) * scale_y);
+    fprintf(file, "stroke\n");
+
+
+    fprintf(file, "0 0 0 setrgbcolor\n");
+
+
     Lexer* lexer = create_lexer(expression);
     Node* root = parse_expr(lexer);
     free(lexer);
@@ -471,17 +513,21 @@ int main(int argc, char* argv[]) {
     int first_point = 1;
     for (double x = limits.x_min; x <= limits.x_max; x += 0.01) {
         const double y = evaluate(root, x);
+        double ps_x = x * scale_x; // Масштабированное значение x
+        double ps_y = y * scale_y;            // Масштабированное значение y
+        if (first_point) {
+            fprintf(file, "%f %f moveto\n", ps_x, ps_y);
+            first_point = 0;
+        } else {
+            fprintf(file, "%f %f lineto\n", ps_x, ps_y);
 
-        if (y >= limits.y_min && y <= limits.y_max) {
-            if (first_point) {
-                fprintf(file, "%.2f %.2f moveto\n", x, y);
-
-                first_point = 0;
-            } else {
-                fprintf(file, "%.2f %.2f lineto\n", x, y);
-            }
         }
     }
+    fprintf(file, "stroke\n");
+
+
+
+    fprintf(file,"showpage\n");
 
     fclose(file);
 
