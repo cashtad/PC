@@ -84,6 +84,10 @@ double evaluate(Node* node, const double x_value) {
                 result = left_value * right_value;
                 break;
             case '/':
+                if (right_value == 0) {
+                    fprintf(stderr, "Division by zero\n");
+                    exit(EXIT_FAILURE);
+                }
                 result = left_value / right_value;
                 break;
             case '^':
