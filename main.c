@@ -56,11 +56,25 @@ typedef struct Limits {
 } Limits;
 
 
-//TODO RETURN 1 IF ERR
-Limits parse_limits(const char* limits_str) {
-    Limits limits = {-10, 10, -10, 10};  // Default values, if user do not identify them it args
-    sscanf(limits_str, "%lf:%lf:%lf:%lf", &limits.x_min, &limits.x_max, &limits.y_min, &limits.y_max);
-    return limits;
+int parse_limits(const char* limits_str, Limits* limits) {
+    char* endptr;
+
+    limits->x_min = strtod(limits_str, &endptr);
+    if (*endptr != ':') return 1;
+
+    limits->x_max = strtod(endptr + 1, &endptr);
+    if (*endptr != ':') return 1;
+
+    limits->y_min = strtod(endptr + 1, &endptr);
+    if (*endptr != ':') return 1;
+
+    limits->y_max = strtod(endptr + 1, &endptr);
+    if (*endptr != '\0') return 1;
+
+    if (limits->x_min > limits->x_max) return 1;
+    if (limits->y_min > limits->y_max) return 1;
+
+    return 0; // Success
 }
 
 // Function prototypes
@@ -76,14 +90,14 @@ void free_node(Node* node);
 
 // Lexer functions
 Lexer* create_lexer(const char* text) {
-    Lexer* lexer = (Lexer*)malloc(sizeof(Lexer));
+    Lexer* lexer = malloc(sizeof(Lexer));
     lexer->text = text;
     lexer->pos = 0;
     lexer->current_char = text[0];
     return lexer;
 }
 
-// Advances the lexer's position by one character
+// Advances the lexer position by one character
 void advance(Lexer* lexer) {
     lexer->pos++;
     if (lexer->pos < strlen(lexer->text)) {
@@ -219,9 +233,6 @@ Token get_next_token(Lexer* lexer) {
     return (Token){ TOKEN_EOF };
 }
 
-//Parses a full expression
-Node* parse_expr(Lexer* lexer);
-
 // Parses a factor (number, identifier, function, or parenthesized expression)
 Node* parse_factor(Lexer* lexer) {
     Token token = get_next_token(lexer);
@@ -284,14 +295,14 @@ Node* parse_term(Lexer* lexer) {
 
     // Handle multiplication, division, and exponentiation
     while (token.type == TOKEN_MUL || token.type == TOKEN_DIV || token.type == TOKEN_POW) {
-        Node* new_node = (Node*)malloc(sizeof(Node));
+        Node* new_node = malloc(sizeof(Node));
         new_node->type = NODE_OP;
 
         if (token.type == TOKEN_MUL) {
             new_node->op.op = '*';
         } else if (token.type == TOKEN_DIV) {
             new_node->op.op = '/';
-        } else if (token.type == TOKEN_POW) {
+        } else {
             new_node->op.op = '^';
         }
 
@@ -312,9 +323,9 @@ Node* parse_expr(Lexer* lexer) {
     Token token = get_next_token(lexer);
 
     while (token.type == TOKEN_PLUS || token.type == TOKEN_MINUS) {
-        Node* new_node = (Node*)malloc(sizeof(Node));
+        Node* new_node = malloc(sizeof(Node));
         new_node->type = NODE_OP;
-        new_node->op.op = (token.type == TOKEN_PLUS) ? '+' : '-';
+        new_node->op.op = token.type == TOKEN_PLUS ? '+' : '-';
         new_node->op.left = node;
         new_node->op.right = parse_term(lexer);
         node = new_node;
@@ -328,19 +339,18 @@ Node* parse_expr(Lexer* lexer) {
 }
 
 // Evaluate expression with `x`
-double evaluate(Node* node, double x_value) {
+double evaluate(Node* node, const double x_value) {
     if (node->type == NODE_NUM) {
         return node->num;
-    } else if (node->type == NODE_ID) {
-            if (strcmp(node->id, "x") == 0) {
-                return x_value;
-            }
-            return 0.0; // Default value for unknown variable
-    } else if (node->type == NODE_ID) {
-        // Handle variables here if needed
-        return 0.0; // Placeholder
-    } else if (node->type == NODE_FUNC) {
-        double arg_value = evaluate(node->func.arg, x_value);
+    }
+    if (node->type == NODE_ID) {
+        if (strcmp(node->id, "x") == 0) {
+            return x_value;
+        }
+        return 0.0; // Default value for unknown variable
+    }
+    if (node->type == NODE_FUNC) {
+        const double arg_value = evaluate(node->func.arg, x_value);
         double result;
 
         // Handle standard mathematical functions
@@ -375,10 +385,10 @@ double evaluate(Node* node, double x_value) {
             exit(EXIT_FAILURE);
         }
         return result;
-    } else if (node->type == NODE_OP) {
+    } if (node->type == NODE_OP) {
         if (node->op.left == NULL) {
             // Unarnian operator
-            double right_value = evaluate(node->op.right, x_value);
+            const double right_value = evaluate(node->op.right, x_value);
             switch (node->op.op) {
                 case '-':
                     return -right_value;
@@ -386,34 +396,33 @@ double evaluate(Node* node, double x_value) {
                     fprintf(stderr, "Error: unknown unary operator '%c'\n", node->op.op);
                 exit(EXIT_FAILURE);
             }
-        } else {
-            // Binary operator
-            double left_value = evaluate(node->op.left, x_value);
-            double right_value = evaluate(node->op.right, x_value);
-            double result;
-
-            switch (node->op.op) {
-                case '+':
-                    result = left_value + right_value;
-                break;
-                case '-':
-                    result = left_value - right_value;
-                break;
-                case '*':
-                    result = left_value * right_value;
-                break;
-                case '/':
-                    result = left_value / right_value;
-                break;
-                case '^':
-                    result = pow(left_value, right_value);
-                break;
-                default:
-                    fprintf(stderr, "Error: unknown binary operator '%c'\n", node->op.op);
-                exit(EXIT_FAILURE);
-            }
-            return result;
         }
+        // Binary operator
+        const double left_value = evaluate(node->op.left, x_value);
+        const double right_value = evaluate(node->op.right, x_value);
+        double result;
+
+        switch (node->op.op) {
+            case '+':
+                result = left_value + right_value;
+                break;
+            case '-':
+                result = left_value - right_value;
+                break;
+            case '*':
+                result = left_value * right_value;
+                break;
+            case '/':
+                result = left_value / right_value;
+                break;
+            case '^':
+                result = pow(left_value, right_value);
+                break;
+            default:
+                fprintf(stderr, "Error: unknown binary operator '%c'\n", node->op.op);
+                exit(EXIT_FAILURE);
+        }
+        return result;
     }
 
     fprintf(stderr, "Error: unknown node type\n");
@@ -435,23 +444,27 @@ void free_node(Node* node) {
 
 
 // Main function
-int main(int argc, char* argv[]) {
-    clock_t start, end;
-    double cpu_time_used;
-
-    // Проверка на обязательные параметры
+int main(const int argc, char* argv[]) {
+    // Necessary arguments check
     if (argc < 3) {
-        fprintf(stderr, "Wrong parametres. Use as: %s <expression> <output_file> [limits]\n", argv[0]);
+        fprintf(stderr, "Wrong parameters. Use as: %s <expression> <output_file> [limits]\n", argv[0]);
         return 1;
     }
 
     const char* expression = argv[1];
     const char* output_file = argv[2];
-    Limits limits = {-10, 10, -10, 10};  // Значения по умолчанию
+    Limits limits = {-10, 10, -10, 10};  // Default values
 
     // Проверка на наличие третьего параметра limits
     if (argc == 4) {
-        limits = parse_limits(argv[3]);
+        if (parse_limits(argv[3], &limits) == 0) {
+            printf("Limits: x_min=%.2f, x_max=%.2f, y_min=%.2f, y_max=%.2f\n",
+           limits.x_min, limits.x_max, limits.y_min, limits.y_max);
+        }
+        else {
+            printf("Error parsing limits string.\n");
+            return 1;
+        }
     }
 
     printf("Expression: %s\n", expression);
@@ -460,8 +473,7 @@ int main(int argc, char* argv[]) {
            limits.x_min, limits.x_max, limits.y_min, limits.y_max);
 
 
-
-    start = clock();  // Старт замера времени
+    const clock_t start = clock();  // Старт замера времени
 
     // Открываем .ps файл для записи
     FILE* file = fopen(output_file, "w");
@@ -471,15 +483,15 @@ int main(int argc, char* argv[]) {
     }
 
 
-    double page_width = 595.0;  // Ширина страницы A4
-    double page_height = 842.0; // Высота страницы A4
+    const double page_width = 595.0;  // Ширина страницы A4
+    const double page_height = 842.0; // Высота страницы A4
 
     fprintf(file, "%%PageSetup\n");
     fprintf(file, "<< /PageSize [%f %f] >> setpagedevice\n", page_width, page_height);
 
     // Масштабирование
-    double scale_x = (page_width - 100) / (limits.x_max - limits.x_min);  // Масштаб по оси X
-    double scale_y = (page_height - 100) / (limits.y_max - limits.y_min);           // Масштаб по оси Y
+    const double scale_x = (page_width - 100) / (limits.x_max - limits.x_min);  // Масштаб по оси X
+    const double scale_y = (page_height - 100) / (limits.y_max - limits.y_min);           // Масштаб по оси Y
 
     // Печать заголовка PostScript
     fprintf(file, "%%!PS\n");
@@ -489,17 +501,17 @@ int main(int argc, char* argv[]) {
     fprintf(file, "%f %f translate\n", page_width / 2, page_height / 2);
 
     // Инвертирование оси Y (для правильной ориентации графика)
-    fprintf(file, "1 -1 scale\n");
+    // fprintf(file, "1 -1 scale\n");
 
     fprintf(file, "1 0 0 setrgbcolor\n");
 
 
-    fprintf(file, "%f %f moveto\n", (limits.x_min) * scale_x, 0.0);
-    fprintf(file, "%f %f lineto\n", (limits.x_max) * scale_x, 0.0);
+    fprintf(file, "%f %f moveto\n", limits.x_min * scale_x, 0.0);
+    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x, 0.0);
     fprintf(file, "stroke\n");
 
-    fprintf(file, "%f %f moveto\n", 0.0, (limits.y_min) * scale_y);
-    fprintf(file, "%f %f lineto\n", 0.0, (limits.y_max) * scale_y);
+    fprintf(file, "%f %f moveto\n", 0.0, limits.y_min * scale_y);
+    fprintf(file, "%f %f lineto\n", 0.0, limits.y_max * scale_y);
     fprintf(file, "stroke\n");
 
 
@@ -513,8 +525,8 @@ int main(int argc, char* argv[]) {
     int first_point = 1;
     for (double x = limits.x_min; x <= limits.x_max; x += 0.01) {
         const double y = evaluate(root, x);
-        double ps_x = x * scale_x; // Масштабированное значение x
-        double ps_y = y * scale_y;            // Масштабированное значение y
+        const double ps_x = x * scale_x; // Масштабированное значение x
+        const double ps_y = y * scale_y;            // Масштабированное значение y
         if (first_point) {
             fprintf(file, "%f %f moveto\n", ps_x, ps_y);
             first_point = 0;
@@ -531,8 +543,8 @@ int main(int argc, char* argv[]) {
 
     fclose(file);
 
-    end = clock();  // Конец замера времени
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    const clock_t end = clock();  // Конец замера времени
+    const double cpu_time_used = (double) (end - start) / CLOCKS_PER_SEC;
     printf("Time spent: %f seconds\n", cpu_time_used);
 
     return 0;
