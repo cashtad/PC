@@ -117,6 +117,7 @@ void skip_whitespace(Lexer* lexer) {
 // Extracts the next token from the input stream
 Token get_next_token(Lexer* lexer) {
     while (lexer->current_char != '\0') {
+        //To skip whitespaces
         if (isspace(lexer->current_char)) {
             skip_whitespace(lexer);
             continue;
@@ -161,7 +162,8 @@ Token get_next_token(Lexer* lexer) {
             token.func[len] = '\0';
 
             // Check if it's a recognized function
-            if (strcmp(token.func, "cos") == 0 ||
+            if (token.func[len] > 1 &&
+                (strcmp(token.func, "cos") == 0 ||
                 strcmp(token.func, "sin") == 0 ||
                 strcmp(token.func, "tan") == 0 ||
                 strcmp(token.func, "abs") == 0 ||
@@ -173,7 +175,7 @@ Token get_next_token(Lexer* lexer) {
                 strcmp(token.func, "sinh") == 0 ||
                 strcmp(token.func, "cosh") == 0 ||
                 strcmp(token.func, "tanh") == 0 ||
-                strcmp(token.func, "exp") == 0) {
+                strcmp(token.func, "exp") == 0)) {
                 token.type = TOKEN_FUNC;
                 return token;
     }
@@ -535,6 +537,9 @@ int main(const int argc, char* argv[]) {
 
         }
     }
+
+    free_node(root);
+
     fprintf(file, "stroke\n");
 
 
