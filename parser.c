@@ -9,16 +9,27 @@
 #include <string.h>
 
 // Parses a full expression
-Node* parse_expr(Lexer* lexer) {
-    Node* node = parse_term(lexer);
+Node *parse_expr(Lexer *lexer) {
+    Node *node = parse_factor(lexer);
     Token token = get_next_token(lexer);
 
-    while (token.type == TOKEN_PLUS || token.type == TOKEN_MINUS) {
-        Node* new_node = malloc(sizeof(Node));
+    while (token.type == TOKEN_PLUS || token.type == TOKEN_MINUS || token.type == TOKEN_MUL || token.type == TOKEN_DIV
+           || token.type == TOKEN_POW) {
+        Node *new_node = malloc(sizeof(Node));
         new_node->type = NODE_OP;
-        new_node->op.op = token.type == TOKEN_PLUS ? '+' : '-';
+        if (token.type == TOKEN_MUL) {
+            new_node->op.op = '*';
+        } else if (token.type == TOKEN_DIV) {
+            new_node->op.op = '/';
+        } else if (token.type == TOKEN_POW) {
+            new_node->op.op = '^';
+        } else if (token.type == TOKEN_PLUS) {
+            new_node->op.op = '+';
+        } else {
+            new_node->op.op = '-';
+        }
         new_node->op.left = node;
-        new_node->op.right = parse_term(lexer);
+        new_node->op.right = parse_factor(lexer);
         node = new_node;
         //printf("Parsed expression with operator: %c\n", new_node->op.op);
         token = get_next_token(lexer);
@@ -30,62 +41,31 @@ Node* parse_expr(Lexer* lexer) {
 }
 
 
-
-// Parses a term
-Node* parse_term(Lexer* lexer) {
-    Node* node = parse_factor(lexer);
-    Token token = get_next_token(lexer);
-
-    // Handle multiplication, division, and exponentiation
-    while (token.type == TOKEN_MUL || token.type == TOKEN_DIV || token.type == TOKEN_POW) {
-        Node* new_node = malloc(sizeof(Node));
-        new_node->type = NODE_OP;
-
-        if (token.type == TOKEN_MUL) {
-            new_node->op.op = '*';
-        } else if (token.type == TOKEN_DIV) {
-            new_node->op.op = '/';
-        } else {
-            new_node->op.op = '^';
-        }
-
-        new_node->op.left = node;
-        new_node->op.right = parse_factor(lexer);
-        node = new_node;
-        token = get_next_token(lexer);
-    }
-
-    lexer->pos--; // Return last token
-    lexer->current_char = lexer->text[lexer->pos];
-    return node;
-}
-
-
 // Parses a factor (number, identifier, function, or parenthesized expression)
-Node* parse_factor(Lexer* lexer) {
+Node *parse_factor(Lexer *lexer) {
     Token token = get_next_token(lexer);
-    Node* node = NULL;
+    Node *node = NULL;
 
     // Handle unary minus
     if (token.type == TOKEN_MINUS) {
-        node = (Node*)malloc(sizeof(Node));
+        node = (Node *) malloc(sizeof(Node));
         node->type = NODE_OP;
         node->op.op = '-';
         node->op.left = NULL; // // No left operand for unary operators
         node->op.right = parse_factor(lexer); // Parse right operand
     } else if (token.type == TOKEN_NUM) {
         // Handle numeric literals
-        node = (Node*)malloc(sizeof(Node));
+        node = (Node *) malloc(sizeof(Node));
         node->type = NODE_NUM;
         node->num = token.num;
     } else if (token.type == TOKEN_ID) {
         // Handle identifiers
-        node = (Node*)malloc(sizeof(Node));
+        node = (Node *) malloc(sizeof(Node));
         node->type = NODE_ID;
         strcpy(node->id, token.id);
     } else if (token.type == TOKEN_FUNC) {
         // Handle function calls
-        node = (Node*)malloc(sizeof(Node));
+        node = (Node *) malloc(sizeof(Node));
         node->type = NODE_FUNC;
         strcpy(node->func.func, token.func);
 
@@ -116,9 +96,8 @@ Node* parse_factor(Lexer* lexer) {
 }
 
 
-
 // Frees memory used by the abstract syntax tree (AST)
-void free_node(Node* node) {
+void free_node(Node *node) {
     if (node == NULL) return;
     if (node->type == NODE_OP) {
         free_node(node->op.left);

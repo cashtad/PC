@@ -20,7 +20,7 @@ typedef struct Node {
 
 
 Node* parse_expr(Lexer* lexer);
-Node* parse_term(Lexer* lexer);
+// Node* parse_term(Lexer* lexer);
 Node* parse_factor(Lexer* lexer);
 void free_node(Node* node);
 

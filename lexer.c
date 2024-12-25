@@ -80,9 +80,8 @@ Token get_next_token(Lexer *lexer) {
                 advance(lexer);
             }
             token.func[len] = '\0';
-
             // Check if it's a recognized function
-            if (token.func[len] != 1) {
+            if (strcmp(token.func, "x") != 0) {
                 if (strcmp(token.func, "cos") == 0 ||
                     strcmp(token.func, "sin") == 0 ||
                     strcmp(token.func, "tan") == 0 ||
@@ -99,10 +98,12 @@ Token get_next_token(Lexer *lexer) {
                     token.type = TOKEN_FUNC;
                     return token;
                 }
+            } else {
+                token.type = TOKEN_ID;
+                //printf("Token: ID(%s)\n", token.func);
+                return token;
             }
-            token.type = TOKEN_ID;
-            //printf("Token: ID(%s)\n", token.func);
-            return token;
+
         }
 
         // Handle operators and parentheses
