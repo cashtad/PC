@@ -1,16 +1,11 @@
-//
-// Created by lemal on 24.12.2024.
-//
-
 #include "evaluator.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
-// Evaluate expression with `x`
-double evaluate(Node* node, const double x_value) {
+// Recursive evaluation. Returns value of node, if node is 'x' then returns x value from func arg
+double evaluate(Node *node, const double x_value) {
     if (node->type == NODE_NUM) {
         return node->num;
     }
@@ -56,7 +51,8 @@ double evaluate(Node* node, const double x_value) {
             exit(EXIT_FAILURE);
         }
         return result;
-    } if (node->type == NODE_OP) {
+    }
+    if (node->type == NODE_OP) {
         if (node->op.left == NULL) {
             // Unarnian operator
             const double right_value = evaluate(node->op.right, x_value);
@@ -65,7 +61,7 @@ double evaluate(Node* node, const double x_value) {
                     return -right_value;
                 default:
                     fprintf(stderr, "Error: unknown unary operator '%c'\n", node->op.op);
-                exit(EXIT_FAILURE);
+                    exit(EXIT_FAILURE);
             }
         }
         // Binary operator
@@ -103,4 +99,3 @@ double evaluate(Node* node, const double x_value) {
     fprintf(stderr, "Error: unknown node type\n");
     exit(EXIT_FAILURE);
 }
-

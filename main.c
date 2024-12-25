@@ -104,6 +104,19 @@ int main(const int argc, char *argv[]) {
     fprintf(file, "%f %f lineto\n", 0.0, limits.y_max * scale_y);
     fprintf(file, "stroke\n");
 
+    int const steps_x = (int)(limits.x_max - limits.x_min);
+    int const steps_y = (int)(limits.y_max - limits.y_min);
+
+    for (int i = 0; i <= steps_x; i++) {
+        fprintf(file, "%f %f moveto\n", limits.x_min*scale_x + i * scale_x, 5.0);
+        fprintf(file, "%f %f lineto\n", limits.x_min*scale_x + i * scale_x, -5.0);
+
+    }
+    for (int i = 0; i <= steps_y; i++) {
+        fprintf(file, "%f %f moveto\n", -5.0, limits.y_min*scale_y + i * scale_y);
+        fprintf(file, "%f %f lineto\n", 5.0, limits.y_min*scale_y + i * scale_y);
+
+    }
 
     fprintf(file, "0 0 0 setrgbcolor\n");
 

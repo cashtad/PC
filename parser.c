@@ -1,9 +1,4 @@
-//
-// Created by lemal on 24.12.2024.
-//
-
 #include "parser.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,7 +1,3 @@
-//
-// Created by lemal on 24.12.2024.
-//
-
 #include "lexer.h"
 #include <ctype.h>
 #include <stdio.h>
@@ -103,7 +99,6 @@ Token get_next_token(Lexer *lexer) {
                 //printf("Token: ID(%s)\n", token.func);
                 return token;
             }
-
         }
 
         // Handle operators and parentheses
