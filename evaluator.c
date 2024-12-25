@@ -55,10 +55,11 @@ double evaluate(Node *node, const double x_value) {
     if (node->type == NODE_OP) {
         if (node->op.left == NULL) {
             // Unarnian operator
-            const double right_value = evaluate(node->op.right, x_value);
+            double right_value = evaluate(node->op.right, x_value);
             switch (node->op.op) {
                 case '-':
-                    return -right_value;
+                    right_value = -right_value;
+                    return right_value;
                 default:
                     fprintf(stderr, "Error: unknown unary operator '%c'\n", node->op.op);
                     exit(EXIT_FAILURE);
