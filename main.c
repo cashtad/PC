@@ -77,6 +77,7 @@ int main(const int argc, char *argv[]) {
     const double page_height = 842.0; // Высота страницы A4
 
     fprintf(file, "%%PageSetup\n");
+    fprintf(file, "/Courier findfont 12 scalefont setfont\n");
     fprintf(file, "<< /PageSize [%f %f] >> setpagedevice\n", page_width, page_height);
 
     // Масштабирование
@@ -104,21 +105,47 @@ int main(const int argc, char *argv[]) {
     fprintf(file, "%f %f lineto\n", 0.0, limits.y_max * scale_y);
     fprintf(file, "stroke\n");
 
-    int const steps_x = (int)(limits.x_max - limits.x_min);
-    int const steps_y = (int)(limits.y_max - limits.y_min);
-
-    for (int i = 0; i <= steps_x; i++) {
-        fprintf(file, "%f %f moveto\n", limits.x_min*scale_x + i * scale_x, 5.0);
-        fprintf(file, "%f %f lineto\n", limits.x_min*scale_x + i * scale_x, -5.0);
-
-    }
-    for (int i = 0; i <= steps_y; i++) {
-        fprintf(file, "%f %f moveto\n", -5.0, limits.y_min*scale_y + i * scale_y);
-        fprintf(file, "%f %f lineto\n", 5.0, limits.y_min*scale_y + i * scale_y);
-
-    }
-
+    int const steps_x_to_right = (int)(limits.x_max);
+    int const steps_x_to_left = abs((int)limits.x_min);
+    int const steps_y_up = (int)(limits.y_max);
+    int const steps_y_down = abs((int)(limits.y_max));
     fprintf(file, "0 0 0 setrgbcolor\n");
+
+    for (int i = 0; i <= steps_x_to_right; i++) {
+        fprintf(file, "%f %f moveto\n", i * scale_x, 5.0);
+        fprintf(file, "%f %f lineto\n", i * scale_x, -5.0);
+        fprintf(file, "%f %f moveto\n", i * scale_x-3, -15.0);
+        if (i > 0) {
+            fprintf(file, "(%d) show\n",i);
+
+        }
+    }
+    for (int i = -1; i >= -steps_x_to_left; i--) {
+        fprintf(file, "%f %f moveto\n", i * scale_x, 5.0);
+        fprintf(file, "%f %f lineto\n", i * scale_x, -5.0);
+        fprintf(file, "%f %f moveto\n", i * scale_x-11, -15.0);
+        fprintf(file, "(%d) show\n",i);
+
+    }
+    for (int i = 0; i <= steps_y_up; i++) {
+        fprintf(file, "%f %f moveto\n", -5.0, i * scale_y);
+        fprintf(file, "%f %f lineto\n", 5.0, i * scale_y);
+        if (i > 0) {
+            fprintf(file, "%f %f moveto\n", 6.0, i * scale_y - 3);
+            fprintf(file, "(%d) show\n",i);
+        }
+
+    }
+    for (int i = -1; i >= -steps_y_down; i--) {
+        fprintf(file, "%f %f moveto\n", -5.0, i * scale_y);
+        fprintf(file, "%f %f lineto\n", 5.0, i * scale_y);
+
+        fprintf(file, "%f %f moveto\n", 6.0, i * scale_y - 3);
+        fprintf(file, "(%d) show\n",i);
+
+    }
+
+    // fprintf(file, "0 0 0 setrgbcolor\n");
 
 
     Lexer *lexer = create_lexer(expression);
