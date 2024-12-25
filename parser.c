@@ -67,13 +67,13 @@ Node *parse_factor(Lexer *lexer) {
         token = get_next_token(lexer); // Expect '('
         if (token.type != TOKEN_LPAREN) {
             fprintf(stderr, "Error: expected '(' after function '%s'\n", node->func.func);
-            exit(EXIT_FAILURE);
+            exit(2);
         }
         node->func.arg = parse_expr(lexer); // Parse function argument
         token = get_next_token(lexer); // Expect ')'
         if (token.type != TOKEN_RPAREN) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
-            exit(EXIT_FAILURE);
+            exit(2);
         }
     } else if (token.type == TOKEN_LPAREN) {
         // Handle parenthesized expressions
@@ -81,11 +81,11 @@ Node *parse_factor(Lexer *lexer) {
         token = get_next_token(lexer); // Expect ')'
         if (token.type != TOKEN_RPAREN) {
             fprintf(stderr, "Error: expected closing parenthesis\n");
-            exit(EXIT_FAILURE);
+            exit(2);
         }
     } else {
         fprintf(stderr, "Error: unexpected token\n");
-        exit(EXIT_FAILURE);
+        exit(2);
     }
     return node;
 }

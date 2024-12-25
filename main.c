@@ -55,21 +55,19 @@ int main(const int argc, char *argv[]) {
                    limits.x_min, limits.x_max, limits.y_min, limits.y_max);
         } else {
             printf("Error parsing limits string.\n");
-            return 1;
+            return 4;
         }
     }
 
     printf("Expression: %s\n", expression);
     printf("Output file: %s\n", output_file);
-    printf("Limits: x_min=%.2f, x_max=%.2f, y_min=%.2f, y_max=%.2f\n",
-           limits.x_min, limits.x_max, limits.y_min, limits.y_max);
 
 
     // Открываем .ps файл для записи
     FILE *file = fopen(output_file, "w");
     if (!file) {
         fprintf(stderr, "Unable to open output file: %s\n", output_file);
-        return 1;
+        return 3;
     }
 
 
@@ -83,69 +81,148 @@ int main(const int argc, char *argv[]) {
     // Масштабирование
     const double scale_x = (page_width - 100) / (limits.x_max - limits.x_min); // Масштаб по оси X
     const double scale_y = (page_height - 100) / (limits.y_max - limits.y_min); // Масштаб по оси Y
+    int const steps_x_to_right = (int) (limits.x_max);
+    int const steps_x_to_left = abs((int) limits.x_min);
+    int const steps_y_up = (int) (limits.y_max);
+    int const steps_y_down = abs((int) (limits.y_min));
 
     // Печать заголовка PostScript
     fprintf(file, "%%!PS\n");
     fprintf(file, "/inch {72 mul} def\n");
 
     // Сдвиг начала координат в центр страницы
-    fprintf(file, "%f %f translate\n", page_width / 2, page_height / 2);
+    fprintf(file, "%f %f translate\n", page_width / 2 - scale_x * (limits.x_max + limits.x_min) / 2,
+            page_height / 2 - scale_y * (limits.y_max + limits.y_min) / 2);
 
-    // Инвертирование оси Y (для правильной ориентации графика)
-    // fprintf(file, "1 -1 scale\n");
 
     fprintf(file, "1 0 0 setrgbcolor\n");
 
 
-    fprintf(file, "%f %f moveto\n", limits.x_min * scale_x, 0.0);
-    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x, 0.0);
+    //X red line
+    fprintf(file, "%f %f moveto\n", limits.x_min * scale_x - 25, 0.0);
+    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x + 25, 0.0);
     fprintf(file, "stroke\n");
-
-    fprintf(file, "%f %f moveto\n", 0.0, limits.y_min * scale_y);
-    fprintf(file, "%f %f lineto\n", 0.0, limits.y_max * scale_y);
+    //X arrow
+    fprintf(file, "%f %f moveto\n", -5.0, limits.y_max * scale_y + 20);
+    fprintf(file, "%f %f lineto\n", 0.0, limits.y_max * scale_y + 25);
+    fprintf(file, "%f %f lineto\n", 5.0, limits.y_max * scale_y + 20);
     fprintf(file, "stroke\n");
+    //X letter
+    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x + 20, -13.0);
+    fprintf(file, "(x) show\n");
 
-    int const steps_x_to_right = (int)(limits.x_max);
-    int const steps_x_to_left = abs((int)limits.x_min);
-    int const steps_y_up = (int)(limits.y_max);
-    int const steps_y_down = abs((int)(limits.y_max));
-    fprintf(file, "0 0 0 setrgbcolor\n");
 
+    //Y red line
+    fprintf(file, "%f %f moveto\n", 0.0, limits.y_min * scale_y - 25);
+    fprintf(file, "%f %f lineto\n", 0.0, limits.y_max * scale_y + 25);
+    fprintf(file, "stroke\n");
+    //Y arrow
+    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x + 20, 5.0);
+    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x + 25, 0.0);
+    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x + 20, -5.0);
+    fprintf(file, "stroke\n");
+    //Y letter
+    fprintf(file, "%f %f moveto\n", 5.0, limits.y_max * scale_y + 20);
+    fprintf(file, "(y) show\n");
+
+    //Limits (blue lines)
+    fprintf(file, "0 0 0.5 setrgbcolor\n"); // Полутон (50% серого)
+    fprintf(file, "[5 15] 0 setdash\n"); // Штрих 5 пунктов, промежуток 3 пункта
+    //RIGHT limit
+    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x, -page_height*2);
+    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x, page_height*2);
+    //LEFT limit
+    fprintf(file, "%f %f moveto\n", limits.x_min * scale_x, -page_height*2);
+    fprintf(file, "%f %f lineto\n", limits.x_min * scale_x, page_height*2);
+    //TOP limit
+    fprintf(file, "%f %f moveto\n", -page_width*2, limits.y_max * scale_y);
+    fprintf(file, "%f %f lineto\n", page_width*2, limits.y_max * scale_y);
+    //BOT limit
+    fprintf(file, "%f %f moveto\n", -page_width*2, limits.y_min * scale_y);
+    fprintf(file, "%f %f lineto\n", page_width*2, limits.y_min * scale_y);
+
+    fprintf(file, "stroke\n");
+    fprintf(file, "[] 0 setdash\n");
+
+
+    //BLACK lines on x and y lines and grey cells
     for (int i = 0; i <= steps_x_to_right; i++) {
+        //Grey lines
+        if (i > 0 && i != steps_x_to_right) {
+            fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
+            fprintf(file, "%f %f moveto\n", i * scale_x, -page_height * 2);
+            fprintf(file, "%f %f lineto\n", i * scale_x, page_height * 2);
+            fprintf(file, "stroke\n");
+        }
+        //Short black lines
+        fprintf(file, "0 0 0 setrgbcolor\n");
         fprintf(file, "%f %f moveto\n", i * scale_x, 5.0);
         fprintf(file, "%f %f lineto\n", i * scale_x, -5.0);
-        fprintf(file, "%f %f moveto\n", i * scale_x-3, -15.0);
-        if (i > 0) {
-            fprintf(file, "(%d) show\n",i);
+        fprintf(file, "stroke\n");
 
+        //Numbers
+        fprintf(file, "%f %f moveto\n", i * scale_x - 3, -15.0);
+        if (i > 0) {
+            fprintf(file, "(%d) show\n", i);
         }
     }
     for (int i = -1; i >= -steps_x_to_left; i--) {
+        //Grey lines
+        if (i != -steps_x_to_left) {
+            fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
+            fprintf(file, "%f %f moveto\n", i * scale_x, -page_height * 2);
+            fprintf(file, "%f %f lineto\n", i * scale_x, page_height * 2);
+            fprintf(file, "stroke\n");
+        }
+        //Short black lines
+        fprintf(file, "0 0 0 setrgbcolor\n");
         fprintf(file, "%f %f moveto\n", i * scale_x, 5.0);
         fprintf(file, "%f %f lineto\n", i * scale_x, -5.0);
-        fprintf(file, "%f %f moveto\n", i * scale_x-11, -15.0);
-        fprintf(file, "(%d) show\n",i);
+        fprintf(file, "stroke\n");
 
+        //Numbers
+        fprintf(file, "%f %f moveto\n", i * scale_x - 11, -15.0);
+        fprintf(file, "(%d) show\n", i);
     }
     for (int i = 0; i <= steps_y_up; i++) {
-        fprintf(file, "%f %f moveto\n", -5.0, i * scale_y);
-        fprintf(file, "%f %f lineto\n", 5.0, i * scale_y);
-        if (i > 0) {
-            fprintf(file, "%f %f moveto\n", 6.0, i * scale_y - 3);
-            fprintf(file, "(%d) show\n",i);
+        //Grey lines
+        if (i > 0 && i != steps_y_up) {
+            fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
+            fprintf(file, "%f %f moveto\n", -page_width * 2, i * scale_y);
+            fprintf(file, "%f %f lineto\n", page_width * 2, i * scale_y);
+            fprintf(file, "stroke\n");
         }
 
-    }
-    for (int i = -1; i >= -steps_y_down; i--) {
+        //Short black lines
+        fprintf(file, "0 0 0 setrgbcolor\n");
         fprintf(file, "%f %f moveto\n", -5.0, i * scale_y);
         fprintf(file, "%f %f lineto\n", 5.0, i * scale_y);
+        fprintf(file, "stroke\n");
 
-        fprintf(file, "%f %f moveto\n", 6.0, i * scale_y - 3);
-        fprintf(file, "(%d) show\n",i);
-
+        //Numbers
+        if (i > 0) {
+            fprintf(file, "%f %f moveto\n", 6.0, i * scale_y - 3);
+            fprintf(file, "(%d) show\n", i);
+        }
     }
+    for (int i = -1; i >= -steps_y_down; i--) {
+        //Grey lines
+        if (i != -steps_y_down) {
+            fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
+            fprintf(file, "%f %f moveto\n", -page_width * 2, i * scale_y);
+            fprintf(file, "%f %f lineto\n", page_width * 2, i * scale_y);
+            fprintf(file, "stroke\n");
+        }
+        //Short black lines
+        fprintf(file, "0 0 0 setrgbcolor\n");
+        fprintf(file, "%f %f moveto\n", -5.0, i * scale_y);
+        fprintf(file, "%f %f lineto\n", 5.0, i * scale_y);
+        fprintf(file, "stroke\n");
 
-    // fprintf(file, "0 0 0 setrgbcolor\n");
+        //Numbers
+        fprintf(file, "%f %f moveto\n", 6.0, i * scale_y - 3);
+        fprintf(file, "(%d) show\n", i);
+    }
 
 
     Lexer *lexer = create_lexer(expression);
@@ -156,10 +233,20 @@ int main(const int argc, char *argv[]) {
     int out_of_range = 0;
     for (double x = limits.x_min; x <= limits.x_max; x += 0.01) {
         const double y = evaluate(abstract_syntax_tree, x);
-        if (y > limits.y_max) {
+        if (y > limits.y_max || y < limits.y_min) {
             if (!out_of_range) {
                 first_point = 1;
                 out_of_range = 1;
+                // const double ps_x = x * scale_x; // Масштабированное значение x
+                // if (y > limits.y_max) {
+                //     const double ps_y = limits.y_max * scale_y; // Масштабированное значение y
+                //     fprintf(file, "%f %f lineto\n", ps_x, ps_y);
+                //
+                // } else {
+                //     const double ps_y = limits.y_min * scale_y; // Масштабированное значение y
+                //     fprintf(file, "%f %f lineto\n", ps_x, ps_y);
+                // }
+
                 fprintf(file, "stroke\n");
             }
         } else {
