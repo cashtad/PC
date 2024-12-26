@@ -4,6 +4,6 @@
 #include "parser.h"
 #include <math.h>
 
-double evaluate(Node* node, double x_value);
+double evaluate(Node *node, double x_value);
 
 #endif // EVALUATOR_H
