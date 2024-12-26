@@ -30,23 +30,22 @@ int parse_limits(const char *limits_str, Limits *limits) {
 
 // Main function
 int main(const int argc, char *argv[]) {
+
     // Necessary arguments check
     if (argc < 3) {
-        fprintf(stderr, "Wrong parameters. Use as: %s <expression> <output_file> [limits]\n", argv[0]);
+        fprintf(stderr, "Invalid input. Correct usage: %s <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n", argv[0]);
         return 1;
     }
 
     const char *expression = argv[1];
     const char *output_file = argv[2];
-    Limits limits = {-10, 10, -10, 10}; // Default values
+    // Default values for limits
+    Limits limits = {-10, 10, -10, 10};
 
-    // Проверка на наличие третьего параметра limits
+    // If limits were defined in arguments
     if (argc == 4) {
-        if (parse_limits(argv[3], &limits) == 0) {
-            printf("Limits: x_min=%.2f, x_max=%.2f, y_min=%.2f, y_max=%.2f\n",
-                   limits.x_min, limits.x_max, limits.y_min, limits.y_max);
-        } else {
-            printf("Error parsing limits string.\n");
+        if (parse_limits(argv[3], &limits) == 1) {
+            printf("Error parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax");
             return 4;
         }
     }

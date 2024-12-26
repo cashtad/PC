@@ -48,6 +48,10 @@ Token get_next_token(Lexer *lexer) {
             // Handle both integer and floating-point parts
             while (isdigit(lexer->current_char) || lexer->current_char == '.') {
                 if (lexer->current_char == '.') {
+                    if (is_fraction) {
+                        fprintf(stderr, "Error: wrong function input.");
+                        exit(2);
+                    }
                     is_fraction = 1; // Start of fractional part
                     advance(lexer);
                     continue;
@@ -61,7 +65,49 @@ Token get_next_token(Lexer *lexer) {
                 advance(lexer);
             }
 
-            // printf("Token: NUM(%.6f)\n", token.num);
+            // Handle exponent part (E or e)
+            if (lexer->current_char == 'E' || lexer->current_char == 'e') {
+                advance(lexer); // Skip E or e
+                int exponent_sign = 1; // Assume positive exponent by default
+
+                // Handle optional sign for the exponent
+                if (lexer->current_char == '+' || lexer->current_char == '-') {
+                    if (lexer->current_char == '-') {
+                        exponent_sign = -1; // Negative exponent
+                    }
+                    advance(lexer); // Skip the sign
+                }
+
+                // Handle the digits of the exponent
+                if (!isdigit(lexer->current_char)) {
+                    // If no digits follow the E or e, it's an error
+                    fprintf(stderr, "Error: wrong exp usage.");
+                    exit(2);
+                }
+
+                int exponent = 0;
+                while (isdigit(lexer->current_char)) {
+                    exponent = exponent * 10 + (lexer->current_char - '0');
+                    advance(lexer);
+                }
+
+                // After processing digits, check for any additional characters (e.g., a decimal point)
+                if (lexer->current_char == '.') {
+                    fprintf(stderr, "Error: wrong exp usage. Exponent cannot be a floating point number.\n");
+                    exit(2);
+                }
+
+                // Apply the exponent to the number
+                while (exponent > 0) {
+                    if (exponent_sign > 0) {
+                        token.num *= 10;
+                    } else {
+                        token.num /= 10;
+                    }
+                    exponent--;
+                }
+            }
+
             return token;
         }
 
@@ -94,11 +140,16 @@ Token get_next_token(Lexer *lexer) {
                     token.type = TOKEN_FUNC;
                     return token;
                 }
-            } else {
+            }
+            if (strcmp(token.func, "x") == 0) {
                 token.type = TOKEN_ID;
                 //printf("Token: ID(%s)\n", token.func);
                 return token;
+            } else {
+                fprintf(stderr, "Error: unknown token: '%s'\n", token.func);
+                exit(2);
             }
+
         }
 
         // Handle operators and parentheses
@@ -145,7 +196,7 @@ Token get_next_token(Lexer *lexer) {
 
         // Handle unknown characters
         fprintf(stderr, "Error: unknown character '%c'\n", lexer->current_char);
-        exit(EXIT_FAILURE);
+        exit(2);
     }
 
     //printf("Token: EOF\n");
