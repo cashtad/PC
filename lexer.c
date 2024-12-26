@@ -96,6 +96,10 @@ Token get_next_token(Lexer *lexer) {
                     fprintf(stderr, "Error: wrong exp usage. Exponent cannot be a floating point number.\n");
                     exit(2);
                 }
+                if (isalpha(lexer->current_char)) {
+                    fprintf(stderr, "Error: wrong exp usage. Exponent cannot contain letters.\n");
+                    exit(2);
+                }
 
                 // Apply the exponent to the number
                 while (exponent > 0) {
