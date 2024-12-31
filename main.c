@@ -6,35 +6,36 @@
 #include "parser.h"
 
 
-int parse_limits(const char *limits_str, Limits *limits) {
-    char *endptr;
-
-    limits->x_min = strtod(limits_str, &endptr);
-    if (*endptr != ':') return 1;
-
-    limits->x_max = strtod(endptr + 1, &endptr);
-    if (*endptr != ':') return 1;
-
-    limits->y_min = strtod(endptr + 1, &endptr);
-    if (*endptr != ':') return 1;
-
-    limits->y_max = strtod(endptr + 1, &endptr);
-    if (*endptr != '\0') return 1;
-
-    if (limits->x_min > limits->x_max) return 1;
-    if (limits->y_min > limits->y_max) return 1;
-
-    return 0; // Success
-}
 
 
-// Main function
+/**
+ * @brief Main function to generate a graphical plot of a mathematical expression.
+ *
+ * This program accepts a mathematical expression as a single-variable function and generates a graph in PostScript format. It supports optional user-defined limits for the x and y axes.
+ *
+ * The function performs the following steps:
+ * - Validates the command-line arguments.
+ * - If no limits are provided, it uses the default limits of [-10, 10] for both x and y axes.
+ * - If limits are provided, they are parsed and validated.
+ * - It initializes a lexer to process the mathematical expression.
+ * - The expression is parsed into an abstract syntax tree (AST).
+ * - The graph is drawn based on the parsed expression and limits.
+ * - Outputs to a PostScript (.ps) file.
+ * - The memory allocated for the AST is freed before exiting.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv An array of strings containing the command-line arguments.
+ * - argv[1]: The mathematical expression to plot.
+ * - argv[2]: The output file where the graph will be saved.
+ * - argv[3] (optional): A string representing the limits for the graph in the format "xmin:xmax:ymin:ymax".
+ *
+ * @return 0 if the program executed successfully, or an error code if an issue occurred.
+ */
 int main(const int argc, char *argv[]) {
 
     // Necessary arguments check
     if (argc < 3) {
-        fprintf(stderr, "Invalid input. Correct usage: %s <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n", argv[0]);
-        return 1;
+        error_exit("invalid input. Correct usage: <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n", 1);
     }
 
     const char *expression = argv[1];
@@ -45,20 +46,19 @@ int main(const int argc, char *argv[]) {
     // If limits were defined in arguments
     if (argc == 4) {
         if (parse_limits(argv[3], &limits) == 1) {
-            printf("Error parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax");
-            return 4;
+            error_exit("while parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax", 4);
+
         }
     }
-
-    printf("Expression: %s\n", expression);
-    printf("Output file: %s\n", output_file);
+    //
+    // printf("Expression: %s\n", expression);
+    // printf("Output file: %s\n", output_file);
 
 
     // Открываем .ps файл для записи
     FILE *file = fopen(output_file, "w");
     if (!file) {
-        fprintf(stderr, "Unable to open output file: %s\n", output_file);
-        return 3;
+        error_exit("unable to open output file",3);
     }
 
 
