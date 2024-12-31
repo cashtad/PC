@@ -62,7 +62,7 @@ int main(const int argc, char *argv[]) {
     }
 
 
-    Lexer *lexer = create_lexer(expression);
+    Lexer *lexer = initialize_lexer(expression);
 
     Node *abstract_syntax_tree = parse_expr(lexer);
 

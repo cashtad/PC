@@ -11,12 +11,13 @@ static Limits limits;
 static FILE *file;
 static double scale_x;
 static double scale_y;
+static const double PAGE_MARGIN = 100.0;
 
 void initialize_statics(const Limits *limits_def, FILE *file_def) {
     limits = *limits_def;
     file = file_def;
-    scale_x = (page_width - 100) / (limits.x_max - limits.x_min); // X-axis scaling
-    scale_y = (page_height - 100) / (limits.y_max - limits.y_min); // Y-axis scaling
+    scale_x = (page_width - PAGE_MARGIN) / (limits.x_max - limits.x_min); // X-axis scaling
+    scale_y = (page_height - PAGE_MARGIN) / (limits.y_max - limits.y_min); // Y-axis scaling
 }
 
 
@@ -28,7 +29,6 @@ void prepare_graph() {
     fprintf(file, "%%!PS\n");
     fprintf(file, "/inch {72 mul} def\n");
 
-    // Сдвиг начала координат в центр страницы
     fprintf(file, "%f %f translate\n", page_width / 2 - scale_x * (limits.x_max + limits.x_min) / 2,
             page_height / 2 - scale_y * (limits.y_max + limits.y_min) / 2);
 
@@ -66,11 +66,9 @@ void draw_axis() {
 }
 
 void draw_limits() {
-    const double scale_x = (page_width - 100) / (limits.x_max - limits.x_min); // Масштаб по оси X
-    const double scale_y = (page_height - 100) / (limits.y_max - limits.y_min); // Масштаб по оси Y
     //Limits (blue lines)
-    fprintf(file, "0 0 0.5 setrgbcolor\n"); // Полутон (50% серого)
-    fprintf(file, "[5 15] 0 setdash\n"); // Штрих 5 пунктов, промежуток 3 пункта
+    fprintf(file, "0 0 0.5 setrgbcolor\n");
+    fprintf(file, "[5 15] 0 setdash\n");
     //RIGHT limit
     fprintf(file, "%f %f moveto\n", limits.x_max * scale_x, -page_height * 2);
     fprintf(file, "%f %f lineto\n", limits.x_max * scale_x, page_height * 2);
@@ -93,8 +91,6 @@ void draw_support_lines() {
     int const steps_x_to_left = abs((int) limits.x_min);
     int const steps_y_up = (int) (limits.y_max);
     int const steps_y_down = abs((int) (limits.y_min));
-    const double scale_x = (page_width - 100) / (limits.x_max - limits.x_min); // Масштаб по оси X
-    const double scale_y = (page_height - 100) / (limits.y_max - limits.y_min); // Масштаб по оси Y
 
     //BLACK lines on x and y lines and grey cells
     for (int i = 0; i <= steps_x_to_right; i++) {
@@ -185,21 +181,11 @@ void draw_function(Node *abstract_syntax_tree) {
             if (!out_of_range) {
                 first_point = 1;
                 out_of_range = 1;
-                // const double ps_x = x * scale_x; // Масштабированное значение x
-                // if (y > limits.y_max) {
-                //     const double ps_y = limits.y_max * scale_y; // Масштабированное значение y
-                //     fprintf(file, "%f %f lineto\n", ps_x, ps_y);
-                //
-                // } else {
-                //     const double ps_y = limits.y_min * scale_y; // Масштабированное значение y
-                //     fprintf(file, "%f %f lineto\n", ps_x, ps_y);
-                // }
-
                 fprintf(file, "stroke\n");
             }
         } else {
-            const double ps_x = x * scale_x; // Масштабированное значение x
-            const double ps_y = y * scale_y; // Масштабированное значение y
+            const double ps_x = x * scale_x;
+            const double ps_y = y * scale_y;
             out_of_range = 0;
             if (first_point) {
                 fprintf(file, "%f %f moveto\n", ps_x, ps_y);
