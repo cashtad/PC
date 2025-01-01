@@ -240,7 +240,7 @@ void draw_function(const Limits *limits, FILE *file, const double *scale_x, cons
                    const Node *abstract_syntax_tree) {
     int first_point = 1;
     int out_of_range = 0;
-    for (double x = limits->x_min; x <= limits->x_max; x += X_EVALUATION_STEP) {
+    for (double x = limits->x_min + X_EVALUATION_STEP; x < limits->x_max; x += X_EVALUATION_STEP) {
         const double y = evaluate(abstract_syntax_tree, x);
         if (y > limits->y_max || y < limits->y_min) {
             if (!out_of_range) {

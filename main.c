@@ -35,6 +35,7 @@ int main(const int argc, char *argv[]) {
     const char *expression = argv[1];
     const char *output_file_name = argv[2];
 
+    printf("Expression: %s\n", expression);
     // Default values for limits
     Limits *limits = initialize_limits();
 
