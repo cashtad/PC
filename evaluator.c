@@ -89,4 +89,5 @@ double evaluate(const Node *node, const double x_value) {
         default:
             error_exit("unknown node type", 2);
     }
+    return 0; // never reached, but required for compiler to know that the function returns a value
 }

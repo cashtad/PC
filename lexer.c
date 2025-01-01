@@ -15,7 +15,7 @@
 Lexer *initialize_lexer(const char *text) {
     Lexer *lexer = malloc(sizeof(Lexer));
     if (!are_brackets_balanced(text)) {
-        error_exit("wrong usage of brackets! Ensure that brackets are balanced and used in right positions",2);
+        error_exit("wrong usage of brackets! Ensure that brackets are balanced and used in right positions", 2);
     }
     lexer->text = text;
     lexer->pos = 0;
@@ -27,36 +27,31 @@ Lexer *initialize_lexer(const char *text) {
 /**
  * @brief Checks if the brackets in the given expression are balanced.
  *
- * This function iterates through the characters of the input expression, using a stack
+ * This function iterates through the characters of the input expression, using a counter
  * to track opening and closing brackets. It returns 1 if the brackets are balanced
  * (i.e., each opening bracket has a corresponding closing bracket in the correct order),
  * and 0 if they are not.
  *
  * @param expression The expression to be checked for balanced brackets.
  * @return 1 if the brackets are balanced, 0 otherwise.
-*/
+ */
 int are_brackets_balanced(const char *expression) {
-    const int MAX_STACK_SIZE = 100;
-    char stack[MAX_STACK_SIZE];
-    int top = -1;
+    int top = 0;
 
     for (int i = 0; expression[i] != '\0'; i++) {
         const char current = expression[i];
 
         if (current == '(') {
-            if (top == MAX_STACK_SIZE - 1) {
-                return 0;
-            }
-            stack[++top] = current;
+            top++;
         } else if (current == ')') {
-            if (top == -1) {
+            if (top == 0) {
                 return 0;
             }
             top--;
         }
     }
 
-    return top == -1;
+    return top == 0;
 }
 
 /**
@@ -193,28 +188,31 @@ Token process_identifier(Lexer *lexer) {
         error_exit("Identifier too long", 2);
     }
     token.func[len] = '\0';
-    if (strcmp(token.func, "x") != 0) {
-        if (strcmp(token.func, "cos") == 0 ||
-            strcmp(token.func, "sin") == 0 ||
-            strcmp(token.func, "tan") == 0 ||
-            strcmp(token.func, "abs") == 0 ||
-            strcmp(token.func, "ln") == 0 ||
-            strcmp(token.func, "log") == 0 ||
-            strcmp(token.func, "asin") == 0 ||
-            strcmp(token.func, "acos") == 0 ||
-            strcmp(token.func, "atan") == 0 ||
-            strcmp(token.func, "sinh") == 0 ||
-            strcmp(token.func, "cosh") == 0 ||
-            strcmp(token.func, "tanh") == 0 ||
-            strcmp(token.func, "exp") == 0) {
-            token.type = TOKEN_FUNC;
-            return token;
-        }
-        error_exit("unknown identifier", 2);
-    } else {
+    if (strcmp(token.func, "x") == 0) {
         token.type = TOKEN_ID;
         return token;
     }
+
+    if (strcmp(token.func, "cos") == 0 ||
+        strcmp(token.func, "sin") == 0 ||
+        strcmp(token.func, "tan") == 0 ||
+        strcmp(token.func, "abs") == 0 ||
+        strcmp(token.func, "ln") == 0 ||
+        strcmp(token.func, "log") == 0 ||
+        strcmp(token.func, "asin") == 0 ||
+        strcmp(token.func, "acos") == 0 ||
+        strcmp(token.func, "atan") == 0 ||
+        strcmp(token.func, "sinh") == 0 ||
+        strcmp(token.func, "cosh") == 0 ||
+        strcmp(token.func, "tanh") == 0 ||
+        strcmp(token.func, "exp") == 0) {
+        token.type = TOKEN_FUNC;
+        return token;
+    }
+    error_exit("unknown identifier", 2);
+
+    token.type = TOKEN_ID;
+    return token; // never reached, but required for compiler to know that the function returns a value
 }
 
 /**
@@ -252,6 +250,7 @@ Token process_operator(Lexer *lexer) {
         case '^': return (Token){TOKEN_POW};
         default: error_exit("Unknown operator", 2);
     }
+    return (Token){TOKEN_EOF}; // never reached, but required for compiler to know that the function returns a value
 }
 
 /**
