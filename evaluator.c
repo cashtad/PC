@@ -1,9 +1,5 @@
 #include "evaluator.h"
 
-#include <string.h>
-
-#include "utilities.h"
-
 /**
  * @brief Evaluates the expression represented by the abstract syntax tree (AST).
  *
@@ -23,7 +19,7 @@
  *       operator, function, or logarithmic domain error (e.g., log of a non-positive number),
  *       the program will terminate with an error message.
  */
-double evaluate(Node *node, const double x_value) {
+double evaluate(const Node *node, const double x_value) {
     switch (node->type) {
         case NODE_NUM:
             return node->num;
@@ -63,7 +59,7 @@ double evaluate(Node *node, const double x_value) {
 
         case NODE_OP: {
             if (node->op.left == NULL) {
-                double right_value = evaluate(node->op.right, x_value);
+                const double right_value = evaluate(node->op.right, x_value);
                 if (node->op.op == '-') {
                     return -right_value;
                 }

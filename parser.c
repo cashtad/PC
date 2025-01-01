@@ -1,8 +1,5 @@
 #include "parser.h"
-#include <stdlib.h>
-#include <string.h>
 
-#include "utilities.h"
 
 /**
  * @brief Parses an expression from the lexer input and builds an abstract syntax tree (AST).

@@ -2,7 +2,6 @@
 #define PARSER_H
 #include "lexer.h"
 
-
 /**
  * @brief Represents a node in the abstract syntax tree (AST).
  *

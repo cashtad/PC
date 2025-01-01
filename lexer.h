@@ -1,7 +1,11 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <stddef.h>
+#include <ctype.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include "err.h"
 
 /**
  * @brief Represents a lexer that tokenizes the input text.

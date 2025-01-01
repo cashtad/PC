@@ -2,7 +2,11 @@
 #define EVALUATOR_H
 
 #include "parser.h"
+#include "evaluator.h"
+#include <string.h>
+#include "err.h"
 #include <math.h>
+
 /**
  * @brief Evaluates the expression represented by the abstract syntax tree (AST).
  *
@@ -22,6 +26,6 @@
  *       operator, function, or logarithmic domain error (e.g., log of a non-positive number),
  *       the program will terminate with an error message.
  */
-double evaluate(Node *node, double x_value);
+double evaluate(const Node *node, double x_value);
 
 #endif // EVALUATOR_H

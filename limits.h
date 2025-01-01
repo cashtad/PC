@@ -1,9 +1,10 @@
-//
-// Created by lemal on 31.12.2024.
-//
 
-#ifndef UTILITIES_H
-#define UTILITIES_H
+
+#ifndef LIMITS_H
+#define LIMITS_H
+
+#include <stdlib.h>
+
 
 /**
  * @brief Structure that defines the limits for the graph's x and y axes.
@@ -40,7 +41,6 @@ typedef struct Limits {
  */
 int parse_limits(const char *limits_str, Limits *limits);
 
-void error_exit(const char *message, int exit_code);
+Limits *initialize_limits();
 
-
-#endif //UTILITIES_H
+#endif //LIMITS_H

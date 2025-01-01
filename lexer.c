@@ -1,17 +1,5 @@
 #include "lexer.h"
 
-#include <ctype.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "utilities.h"
-
-
-void error(const char *message, Lexer *lexer) {
-    free(lexer);
-    error_exit(message, 2);
-}
 
 /**
  * @brief Initializes a lexer for tokenizing a given text.
@@ -27,7 +15,7 @@ void error(const char *message, Lexer *lexer) {
 Lexer *initialize_lexer(const char *text) {
     Lexer *lexer = malloc(sizeof(Lexer));
     if (!are_brackets_balanced(text)) {
-        error("wrong usage of brackets! Ensure that brackets are balanced and used in right positions",lexer);
+        error_exit("wrong usage of brackets! Ensure that brackets are balanced and used in right positions",2);
     }
     lexer->text = text;
     lexer->pos = 0;
@@ -126,7 +114,7 @@ Token process_number(Lexer *lexer) {
     while (isdigit(lexer->current_char) || lexer->current_char == '.') {
         if (lexer->current_char == '.') {
             if (is_fraction) {
-                error("wrong function input", lexer);
+                error_exit("wrong function input", 2);
             }
             is_fraction = 1;
             advance(lexer);
@@ -154,7 +142,7 @@ Token process_number(Lexer *lexer) {
         }
 
         if (!isdigit(lexer->current_char)) {
-            error("wrong exp usage", lexer);
+            error_exit("wrong exp usage", 2);
         }
 
         int exponent = 0;
@@ -164,13 +152,13 @@ Token process_number(Lexer *lexer) {
         }
 
         if (lexer->current_char == '.') {
-            error("wrong exp usage. Exponent cannot be a floating point number", lexer);
+            error_exit("wrong exp usage. Exponent cannot be a floating point number", 2);
         }
         if (isalpha(lexer->current_char)) {
-            error("wrong exp usage. Exponent cannot contain letters", lexer);
+            error_exit("wrong exp usage. Exponent cannot contain letters", 2);
         }
         if (lexer->current_char == '(') {
-            error("wrong exp usage. Exponent cannot contain '('", lexer);
+            error_exit("wrong exp usage. Exponent cannot contain '('", 2);
         }
         if (exponent != 0) {
             token.num *= pow(10, exponent_sign * exponent);
@@ -202,7 +190,7 @@ Token process_identifier(Lexer *lexer) {
         advance(lexer);
     }
     if (len >= 10) {
-        error("Identifier too long", lexer);
+        error_exit("Identifier too long", 2);
     }
     token.func[len] = '\0';
     if (strcmp(token.func, "x") != 0) {
@@ -222,7 +210,7 @@ Token process_identifier(Lexer *lexer) {
             token.type = TOKEN_FUNC;
             return token;
         }
-        error("unknown identifier", lexer);
+        error_exit("unknown identifier", 2);
     } else {
         token.type = TOKEN_ID;
         return token;
@@ -238,7 +226,7 @@ Token process_identifier(Lexer *lexer) {
  * @param c The character to be checked.
  * @return 1 if the character is a valid operator, 0 otherwise.
 */
-int is_operator(char c) {
+int is_operator(const char c) {
     return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
 }
 
@@ -262,7 +250,7 @@ Token process_operator(Lexer *lexer) {
         case '*': return (Token){TOKEN_MUL};
         case '/': return (Token){TOKEN_DIV};
         case '^': return (Token){TOKEN_POW};
-        default: error("Unknown operator", lexer);
+        default: error_exit("Unknown operator", 2);
     }
 }
 
@@ -274,7 +262,7 @@ Token process_operator(Lexer *lexer) {
  * @param c The character to be checked.
  * @return 1 if the character is a bracket, 0 otherwise.
 */
-int is_bracket(char c) {
+int is_bracket(const char c) {
     return c == '(' || c == ')';
 }
 
@@ -293,10 +281,9 @@ Token process_bracket(Lexer *lexer) {
     if (lexer->current_char == '(') {
         advance(lexer);
         return (Token){TOKEN_LPAREN};
-    } else {
-        advance(lexer);
-        return (Token){TOKEN_RPAREN};
     }
+    advance(lexer);
+    return (Token){TOKEN_RPAREN};
 }
 
 /**
@@ -334,7 +321,7 @@ Token get_next_token(Lexer *lexer) {
             return process_bracket(lexer);
         }
 
-        error("unknown character", lexer);
+        error_exit("unknown character", 2);
     }
 
     return (Token){TOKEN_EOF};

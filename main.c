@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "draw_utils.h"
-#include "lexer.h"
-#include "parser.h"
 
 
 /**
@@ -38,15 +33,15 @@ int main(const int argc, char *argv[]) {
     }
 
     const char *expression = argv[1];
-    const char *output_file = argv[2];
+    const char *output_file_name = argv[2];
 
     // Default values for limits
-    Limits limits = {-10, 10, -10, 10};
+    Limits *limits = initialize_limits();
 
 
     // If limits were defined in arguments
     if (argc == 4) {
-        if (parse_limits(argv[3], &limits) == 1) {
+        if (parse_limits(argv[3], limits) == 1) {
             error_exit(
                 "while parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax",
                 4);
@@ -55,8 +50,8 @@ int main(const int argc, char *argv[]) {
 
 
     // Open .ps file for write mode
-    FILE *file = fopen(output_file, "w");
-    if (!file) {
+    FILE *output_file = fopen(output_file_name, "w");
+    if (!output_file) {
         error_exit("unable to open output file", 3);
     }
 
@@ -67,12 +62,12 @@ int main(const int argc, char *argv[]) {
 
     free(lexer);
 
-    draw_graph(&limits, file, abstract_syntax_tree);
+    draw_graph(limits, output_file, abstract_syntax_tree);
 
     free_node(abstract_syntax_tree);
 
 
-    fclose(file);
+    fclose(output_file);
 
 
     return 0;
