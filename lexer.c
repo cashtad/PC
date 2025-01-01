@@ -23,7 +23,7 @@ void error(const char *message, Lexer *lexer) {
  * @param text The text to be tokenized by the lexer.
  * @return A pointer to the initialized Lexer.
  * @throws Exits the program if the brackets in the text are not balanced.
- */
+*/
 Lexer *initialize_lexer(const char *text) {
     Lexer *lexer = malloc(sizeof(Lexer));
     if (!are_brackets_balanced(text)) {
@@ -46,7 +46,7 @@ Lexer *initialize_lexer(const char *text) {
  *
  * @param expression The expression to be checked for balanced brackets.
  * @return 1 if the brackets are balanced, 0 otherwise.
- */
+*/
 int are_brackets_balanced(const char *expression) {
     const int MAX_STACK_SIZE = 100;
     char stack[MAX_STACK_SIZE];
@@ -79,7 +79,7 @@ int are_brackets_balanced(const char *expression) {
  * character is set to the null character ('\0') to indicate the end of the input.
  *
  * @param lexer A pointer to the lexer that tracks the current position and character.
- */
+*/
 void advance(Lexer *lexer) {
     lexer->pos++;
     if (lexer->pos < strlen(lexer->text)) {
@@ -116,12 +116,13 @@ void skip_whitespace(Lexer *lexer) {
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A Token representing the number parsed from the input.
  * @throws Exits the program if the input number or exponent is invalid.
- */
+*/
 Token process_number(Lexer *lexer) {
     Token token = {TOKEN_NUM, .num = 0.0};
     double fraction = 1.0;
     int is_fraction = 0;
 
+    // For lexing int and float numbers
     while (isdigit(lexer->current_char) || lexer->current_char == '.') {
         if (lexer->current_char == '.') {
             if (is_fraction) {
@@ -140,6 +141,7 @@ Token process_number(Lexer *lexer) {
         advance(lexer);
     }
 
+    // For exponential part
     if (lexer->current_char == 'E' || lexer->current_char == 'e') {
         advance(lexer);
         int exponent_sign = 1;
@@ -189,7 +191,7 @@ Token process_number(Lexer *lexer) {
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A Token representing the identifier or function found in the input.
  * @throws Exits the program if the identifier is unknown, too long, or otherwise invalid.
- */
+*/
 Token process_identifier(Lexer *lexer) {
     Token token;
     size_t len = 0;
@@ -235,7 +237,7 @@ Token process_identifier(Lexer *lexer) {
  *
  * @param c The character to be checked.
  * @return 1 if the character is a valid operator, 0 otherwise.
- */
+*/
 int is_operator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
 }
@@ -250,7 +252,7 @@ int is_operator(char c) {
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A Token representing the operator found in the input.
  * @throws Exits the program if the operator is unknown.
- */
+*/
 Token process_operator(Lexer *lexer) {
     const char operator = lexer->current_char;
     advance(lexer);
@@ -271,7 +273,7 @@ Token process_operator(Lexer *lexer) {
  *
  * @param c The character to be checked.
  * @return 1 if the character is a bracket, 0 otherwise.
- */
+*/
 int is_bracket(char c) {
     return c == '(' || c == ')';
 }
@@ -286,7 +288,7 @@ int is_bracket(char c) {
  *
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A Token representing either a left parenthesis (TOKEN_LPAREN) or a right parenthesis (TOKEN_RPAREN).
- */
+*/
 Token process_bracket(Lexer *lexer) {
     if (lexer->current_char == '(') {
         advance(lexer);
@@ -310,7 +312,7 @@ Token process_bracket(Lexer *lexer) {
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A Token representing the next token in the input. Returns a `TOKEN_EOF` token at the end of the input.
  * @throws Exits the program if an unknown character is encountered.
- */
+*/
 Token get_next_token(Lexer *lexer) {
     while (lexer->current_char != '\0') {
         if (isspace(lexer->current_char)) {

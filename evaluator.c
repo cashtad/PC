@@ -1,7 +1,8 @@
 #include "evaluator.h"
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <string.h>
+
+#include "utilities.h"
 
 /**
  * @brief Evaluates the expression represented by the abstract syntax tree (AST).
@@ -39,15 +40,13 @@ double evaluate(Node *node, const double x_value) {
             if (strcmp(node->func.func, "abs") == 0) return fabs(arg_value);
             if (strcmp(node->func.func, "ln") == 0) {
                 if (arg_value <= 0) {
-                    fprintf(stderr, "Error: logarithm of non-positive number\n");
-                    exit(2);
+                    error_exit("logarithm of non-positive number", 2);
                 }
                 return log(arg_value);
             }
             if (strcmp(node->func.func, "log") == 0) {
                 if (arg_value <= 0) {
-                    fprintf(stderr, "Error: logarithm of non-positive number\n");
-                    exit(2);
+                    error_exit("logarithm of non-positive number", 2);
                 }
                 return log10(arg_value);
             }
@@ -59,8 +58,7 @@ double evaluate(Node *node, const double x_value) {
             if (strcmp(node->func.func, "tanh") == 0) return tanh(arg_value);
             if (strcmp(node->func.func, "exp") == 0) return exp(arg_value);
 
-            fprintf(stderr, "Error: unknown function '%s'\n", node->func.func);
-            exit(2);
+            error_exit("unknown function", 2);
         }
 
         case NODE_OP: {
@@ -82,20 +80,17 @@ double evaluate(Node *node, const double x_value) {
                     return left_value * right_value;
                 case '/':
                     if (right_value == 0) {
-                        fprintf(stderr, "Division by zero\n");
-                        exit(2);
+                        error_exit("division by zero", 2);
                     }
                     return left_value / right_value;
                 case '^':
                     return pow(left_value, right_value);
                 default:
-                    fprintf(stderr, "Error: unknown binary operator '%c'\n", node->op.op);
-                    exit(2);
+                    error_exit("unknown binary operator", 2);
             }
         }
 
         default:
-            fprintf(stderr, "Error: unknown node type\n");
-            exit(2);
+            error_exit("unknown node type", 2);
     }
 }

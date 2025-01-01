@@ -20,7 +20,8 @@
  * - `op`: A structure containing the operator symbol (`op`), the left operand (`left`), and the right operand (`right`) for `NODE_OP` nodes.
  *
  * This structure is used to build and manipulate the AST during the parsing process, with each node representing a part of the mathematical expression.
- */typedef struct Node {
+*/
+typedef struct Node {
     enum type { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type;
     union {
         double num;
@@ -49,7 +50,7 @@
  *
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A pointer to the root node of the abstract syntax tree representing the parsed expression.
- */
+*/
 Node *parse_expr(Lexer *lexer);
 
 /**
@@ -69,7 +70,8 @@ Node *parse_expr(Lexer *lexer);
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A pointer to the node representing the parsed factor (e.g., number, identifier, function call, or parenthesized expression).
  * @throws Exits the program if a syntax error occurs, such as an unexpected token or missing parentheses.
- */Node *parse_factor(Lexer *lexer);
+*/
+Node *parse_factor(Lexer *lexer);
 
 /**
  * @brief Recursively frees a node and its child nodes in the abstract syntax tree (AST).
@@ -83,7 +85,7 @@ Node *parse_expr(Lexer *lexer);
  * The function ensures that all dynamically allocated memory for the AST is properly cleaned up to avoid memory leaks.
  *
  * @param node A pointer to the node to be freed. If the node is NULL, the function does nothing.
- */
+*/
 void free_node(Node *node);
 
 #endif //PARSER_H

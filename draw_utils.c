@@ -5,39 +5,11 @@
 #include "draw_utils.h"
 
 
-static const double page_width = 595.0; // A4 width
-static const double page_height = 842.0; // A4 height
 static Limits limits;
 static FILE *file;
 static double scale_x;
 static double scale_y;
-static const double PAGE_MARGIN = 100.0;
-static const double RED_LINE_MARGIN = 25.0;
-static const double MISC_MARGIN = 5.0;
 
-/**
- * @brief Initializes static variables for drawing the graph.
- *
- * This function sets up the necessary static variables that are used for drawing the graph
- * of the mathematical function. It takes the provided limits for the x and y axes and the
- * output file, and computes the scaling factors for both axes. These scaling factors are
- * used to map the function's values to the page coordinates. This function must be called
- * before drawing the graph to ensure that the correct scaling and file setup are in place.
- *
- * @param limits_def Pointer to a `Limits` structure containing the minimum and maximum
- *                   values for both the x and y axes.
- * @param file_def Pointer to the file where the graph will be written (usually a PostScript file).
- *
- * @note The function assumes that `page_width` and `page_height` are predefined constants
- *       representing the dimensions of the output page. Additionally, `PAGE_MARGIN`
- *       is assumed to be a constant that defines the margin around the graph on the page.
- */
-void initialize_statics(const Limits *limits_def, FILE *file_def) {
-    limits = *limits_def;
-    file = file_def;
-    scale_x = (page_width - PAGE_MARGIN) / (limits.x_max - limits.x_min); // X-axis scaling
-    scale_y = (page_height - PAGE_MARGIN) / (limits.y_max - limits.y_min); // Y-axis scaling
-}
 
 /**
  * @brief Prepares the output file for drawing the graph in PostScript format.
@@ -54,14 +26,14 @@ void initialize_statics(const Limits *limits_def, FILE *file_def) {
  */
 void prepare_graph() {
     fprintf(file, "%%PageSetup\n");
-    fprintf(file, "/Courier findfont 12 scalefont setfont\n");
-    fprintf(file, "<< /PageSize [%f %f] >> setpagedevice\n", page_width, page_height);
+    fprintf(file, "/Courier findfont %f scalefont setfont\n", FONT_SIZE);
+    fprintf(file, "<< /PageSize [%f %f] >> setpagedevice\n", PAGE_WIDTH, PAGE_HEIGHT);
 
     fprintf(file, "%%!PS\n");
     fprintf(file, "/inch {72 mul} def\n");
 
-    fprintf(file, "%f %f translate\n", page_width / 2 - scale_x * (limits.x_max + limits.x_min) / 2,
-            page_height / 2 - scale_y * (limits.y_max + limits.y_min) / 2);
+    fprintf(file, "%f %f translate\n", PAGE_WIDTH / 2 - scale_x * (limits.x_max + limits.x_min) / 2,
+            PAGE_HEIGHT / 2 - scale_y * (limits.y_max + limits.y_min) / 2);
 
 
     fprintf(file, "1 0 0 setrgbcolor\n");
@@ -94,7 +66,7 @@ void draw_axis() {
     fprintf(file, "%f %f lineto\n", MISC_MARGIN, limits.y_max * scale_y + RED_LINE_MARGIN - MISC_MARGIN);
     fprintf(file, "stroke\n");
     //X letter
-    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x + RED_LINE_MARGIN - MISC_MARGIN, -13.0);
+    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x + RED_LINE_MARGIN - MISC_MARGIN, -FONT_SIZE);
     fprintf(file, "(x) show\n");
 
 
@@ -133,17 +105,17 @@ void draw_limits() {
     fprintf(file, "0 0 0.5 setrgbcolor\n");
     fprintf(file, "[5 15] 0 setdash\n");
     //RIGHT limit
-    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x, -page_height * 2);
-    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x, page_height * 2);
+    fprintf(file, "%f %f moveto\n", limits.x_max * scale_x, -PAGE_HEIGHT * 2);
+    fprintf(file, "%f %f lineto\n", limits.x_max * scale_x, PAGE_HEIGHT * 2);
     //LEFT limit
-    fprintf(file, "%f %f moveto\n", limits.x_min * scale_x, -page_height * 2);
-    fprintf(file, "%f %f lineto\n", limits.x_min * scale_x, page_height * 2);
+    fprintf(file, "%f %f moveto\n", limits.x_min * scale_x, -PAGE_HEIGHT * 2);
+    fprintf(file, "%f %f lineto\n", limits.x_min * scale_x, PAGE_HEIGHT * 2);
     //TOP limit
-    fprintf(file, "%f %f moveto\n", -page_width * 2, limits.y_max * scale_y);
-    fprintf(file, "%f %f lineto\n", page_width * 2, limits.y_max * scale_y);
+    fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2, limits.y_max * scale_y);
+    fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2, limits.y_max * scale_y);
     //BOT limit
-    fprintf(file, "%f %f moveto\n", -page_width * 2, limits.y_min * scale_y);
-    fprintf(file, "%f %f lineto\n", page_width * 2, limits.y_min * scale_y);
+    fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2, limits.y_min * scale_y);
+    fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2, limits.y_min * scale_y);
 
     fprintf(file, "stroke\n");
     fprintf(file, "[] 0 setdash\n");
@@ -176,8 +148,8 @@ void draw_support_lines() {
         //Grey lines
         if (i > 0 && i != steps_x_to_right) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", i * scale_x, -page_height * 2);
-            fprintf(file, "%f %f lineto\n", i * scale_x, page_height * 2);
+            fprintf(file, "%f %f moveto\n", i * scale_x, -PAGE_HEIGHT * 2);
+            fprintf(file, "%f %f lineto\n", i * scale_x, PAGE_HEIGHT * 2);
             fprintf(file, "stroke\n");
         }
         //Short black lines
@@ -187,7 +159,7 @@ void draw_support_lines() {
         fprintf(file, "stroke\n");
 
         //Numbers
-        fprintf(file, "%f %f moveto\n", i * scale_x - 3, -10 - MISC_MARGIN);
+        fprintf(file, "%f %f moveto\n", i * scale_x - FONT_SIZE / 4, -FONT_SIZE - MISC_MARGIN);
         if (i > 0) {
             fprintf(file, "(%d) show\n", i);
         }
@@ -196,8 +168,8 @@ void draw_support_lines() {
         //Grey lines
         if (i != -steps_x_to_left) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", i * scale_x, -page_height * 2);
-            fprintf(file, "%f %f lineto\n", i * scale_x, page_height * 2);
+            fprintf(file, "%f %f moveto\n", i * scale_x, -PAGE_HEIGHT * 2);
+            fprintf(file, "%f %f lineto\n", i * scale_x, PAGE_HEIGHT * 2);
             fprintf(file, "stroke\n");
         }
         //Short black lines
@@ -207,15 +179,15 @@ void draw_support_lines() {
         fprintf(file, "stroke\n");
 
         //Numbers
-        fprintf(file, "%f %f moveto\n", i * scale_x - 11, -10 - MISC_MARGIN);
+        fprintf(file, "%f %f moveto\n", i * scale_x - FONT_SIZE + FONT_SIZE / 10, -FONT_SIZE - MISC_MARGIN);
         fprintf(file, "(%d) show\n", i);
     }
     for (int i = 0; i <= steps_y_up; i++) {
         //Grey lines
         if (i > 0 && i != steps_y_up) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", -page_width * 2, i * scale_y);
-            fprintf(file, "%f %f lineto\n", page_width * 2, i * scale_y);
+            fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2, i * scale_y);
+            fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2, i * scale_y);
             fprintf(file, "stroke\n");
         }
 
@@ -227,7 +199,7 @@ void draw_support_lines() {
 
         //Numbers
         if (i > 0) {
-            fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1, i * scale_y - 3);
+            fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1, i * scale_y - FONT_SIZE / 4);
             fprintf(file, "(%d) show\n", i);
         }
     }
@@ -235,8 +207,8 @@ void draw_support_lines() {
         //Grey lines
         if (i != -steps_y_down) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", -page_width * 2, i * scale_y);
-            fprintf(file, "%f %f lineto\n", page_width * 2, i * scale_y);
+            fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2, i * scale_y);
+            fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2, i * scale_y);
             fprintf(file, "stroke\n");
         }
         //Short black lines
@@ -246,7 +218,7 @@ void draw_support_lines() {
         fprintf(file, "stroke\n");
 
         //Numbers
-        fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1.0, i * scale_y - 3);
+        fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1.0, i * scale_y - FONT_SIZE / 4);
         fprintf(file, "(%d) show\n", i);
     }
 }
@@ -301,6 +273,31 @@ void finish() {
     fprintf(file, "showpage\n");
 }
 
+
+/**
+ * @brief Initializes static variables for drawing the graph.
+ *
+ * This function sets up the necessary static variables that are used for drawing the graph
+ * of the mathematical function. It takes the provided limits for the x and y axes and the
+ * output file, and computes the scaling factors for both axes. These scaling factors are
+ * used to map the function's values to the page coordinates. This function must be called
+ * before drawing the graph to ensure that the correct scaling and file setup are in place.
+ *
+ * @param limits_def Pointer to a `Limits` structure containing the minimum and maximum
+ *                   values for both the x and y axes.
+ * @param file_def Pointer to the file where the graph will be written (usually a PostScript file).
+ *
+ * @note The function assumes that `page_width` and `page_height` are predefined constants
+ *       representing the dimensions of the output page. Additionally, `PAGE_MARGIN`
+ *       is assumed to be a constant that defines the margin around the graph on the page.
+*/
+void initialize_statics(const Limits *limits_def, FILE *file_def) {
+    limits = *limits_def;
+    file = file_def;
+    scale_x = (PAGE_WIDTH - PAGE_MARGIN) / (limits.x_max - limits.x_min); // X-axis scaling
+    scale_y = (PAGE_HEIGHT - PAGE_MARGIN) / (limits.y_max - limits.y_min); // Y-axis scaling
+}
+
 /**
  * @brief Draws the complete graph including axes, limits, support lines, and the function.
  *
@@ -316,7 +313,7 @@ void finish() {
  * @param limits A pointer to a `Limits` structure containing the minimum and maximum values for the x and y axes.
  * @param file A pointer to a `FILE` where the PostScript drawing commands will be written.
  * @param abstract_syntax_tree A pointer to the root node of the abstract syntax tree (AST) that represents the mathematical function to be plotted.
- */
+*/
 void draw_graph(Limits *limits, FILE *file, Node *abstract_syntax_tree) {
     initialize_statics(limits, file);
     prepare_graph(limits, file);

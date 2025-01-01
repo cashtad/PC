@@ -6,8 +6,6 @@
 #include "parser.h"
 
 
-
-
 /**
  * @brief Main function to generate a graphical plot of a mathematical expression.
  *
@@ -32,33 +30,34 @@
  * @return 0 if the program executed successfully, or an error code if an issue occurred.
  */
 int main(const int argc, char *argv[]) {
-
     // Necessary arguments check
     if (argc < 3) {
-        error_exit("invalid input. Correct usage: <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n", 1);
+        error_exit(
+            "invalid input. Correct usage: <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n",
+            1);
     }
 
     const char *expression = argv[1];
     const char *output_file = argv[2];
+
     // Default values for limits
     Limits limits = {-10, 10, -10, 10};
+
 
     // If limits were defined in arguments
     if (argc == 4) {
         if (parse_limits(argv[3], &limits) == 1) {
-            error_exit("while parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax", 4);
-
+            error_exit(
+                "while parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax",
+                4);
         }
     }
-    //
-    // printf("Expression: %s\n", expression);
-    // printf("Output file: %s\n", output_file);
 
 
-    // Открываем .ps файл для записи
+    // Open .ps file for write mode
     FILE *file = fopen(output_file, "w");
     if (!file) {
-        error_exit("unable to open output file",3);
+        error_exit("unable to open output file", 3);
     }
 
 

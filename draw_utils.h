@@ -7,6 +7,14 @@
 #include "utilities.h"
 
 
+#define PAGE_WIDTH 595.0
+#define PAGE_HEIGHT 842.0
+#define PAGE_MARGIN 100.0
+#define RED_LINE_MARGIN 25.0
+#define MISC_MARGIN 5.0
+#define FONT_SIZE 12.0
+
+
 /**
  * @brief Initializes static variables for drawing the graph.
  *

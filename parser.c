@@ -16,7 +16,7 @@
  *
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A pointer to the root node of the abstract syntax tree representing the parsed expression.
- */
+*/
 Node *parse_expr(Lexer *lexer) {
     Node *node = parse_factor(lexer);
     Token token = get_next_token(lexer);
@@ -65,7 +65,8 @@ Node *parse_expr(Lexer *lexer) {
  * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
  * @return A pointer to the node representing the parsed factor (e.g., number, identifier, function call, or parenthesized expression).
  * @throws Exits the program if a syntax error occurs, such as an unexpected token or missing parentheses.
- */Node *parse_factor(Lexer *lexer) {
+*/
+Node *parse_factor(Lexer *lexer) {
     Token token = get_next_token(lexer);
     Node *node = NULL;
 
@@ -129,7 +130,8 @@ Node *parse_expr(Lexer *lexer) {
  * The function ensures that all dynamically allocated memory for the AST is properly cleaned up to avoid memory leaks.
  *
  * @param node A pointer to the node to be freed. If the node is NULL, the function does nothing.
- */void free_node(Node *node) {
+*/
+void free_node(Node *node) {
     if (node == NULL) return;
     if (node->type == NODE_OP) {
         free_node(node->op.left);
