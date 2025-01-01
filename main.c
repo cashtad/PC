@@ -67,6 +67,7 @@ int main(const int argc, char *argv[]) {
 
     free_node(abstract_syntax_tree);
 
+    free(limits);
 
     fclose(output_file);
 
