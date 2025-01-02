@@ -50,36 +50,37 @@ void prepare_graph(const Limits *limits, FILE *file, const double *scale_x, cons
  *
  * @note The function assumes that the constants `RED_LINE_MARGIN`, `MISC_MARGIN`, and `FONT_SIZE` are defined in 'draw_utils.h'. The arrowheads are drawn at the positive ends of the axes.
  */
-void draw_axes(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y) {
+void draw_axes(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y,  const double *x_cords_for_y_axis, const double *y_cords_for_x_axis) {
+
     // Draw the X-axis as a red line at y = 0
-    fprintf(file, "%f %f moveto\n", limits->x_min * *scale_x - RED_LINE_MARGIN, 0.0);
-    fprintf(file, "%f %f lineto\n", limits->x_max * *scale_x + RED_LINE_MARGIN, 0.0);
+    fprintf(file, "%f %f moveto\n", limits->x_min * *scale_x - RED_LINE_MARGIN, *y_cords_for_x_axis);
+    fprintf(file, "%f %f lineto\n", limits->x_max * *scale_x + RED_LINE_MARGIN, *y_cords_for_x_axis);
     fprintf(file, "stroke\n");
 
     // Draw the arrow at the end of the X-axis
-    fprintf(file, "%f %f moveto\n", limits->x_max * *scale_x + RED_LINE_MARGIN - MISC_MARGIN, MISC_MARGIN);
-    fprintf(file, "%f %f lineto\n", limits->x_max * *scale_x + RED_LINE_MARGIN, 0.0);
-    fprintf(file, "%f %f lineto\n", limits->x_max * *scale_x + RED_LINE_MARGIN - MISC_MARGIN, -MISC_MARGIN);
+    fprintf(file, "%f %f moveto\n", limits->x_max * *scale_x + RED_LINE_MARGIN - MISC_MARGIN, MISC_MARGIN + *y_cords_for_x_axis);
+    fprintf(file, "%f %f lineto\n", limits->x_max * *scale_x + RED_LINE_MARGIN, *y_cords_for_x_axis);
+    fprintf(file, "%f %f lineto\n", limits->x_max * *scale_x + RED_LINE_MARGIN - MISC_MARGIN, -MISC_MARGIN + *y_cords_for_x_axis);
     fprintf(file, "stroke\n");
 
     // Draw the 'x' label for the X-axis
-    fprintf(file, "%f %f moveto\n", limits->x_max * *scale_x + RED_LINE_MARGIN - MISC_MARGIN, -FONT_SIZE);
+    fprintf(file, "%f %f moveto\n", limits->x_max * *scale_x + RED_LINE_MARGIN - MISC_MARGIN, -FONT_SIZE + *y_cords_for_x_axis);
     fprintf(file, "(x) show\n");
 
 
     // Draw the Y-axis as a red line at x = 0
-    fprintf(file, "%f %f moveto\n", 0.0, limits->y_min * *scale_y - RED_LINE_MARGIN);
-    fprintf(file, "%f %f lineto\n", 0.0, limits->y_max * *scale_y + RED_LINE_MARGIN);
+    fprintf(file, "%f %f moveto\n", *x_cords_for_y_axis, limits->y_min * *scale_y - RED_LINE_MARGIN);
+    fprintf(file, "%f %f lineto\n", *x_cords_for_y_axis, limits->y_max * *scale_y + RED_LINE_MARGIN);
     fprintf(file, "stroke\n");
 
     // Draw the arrow at the top of the Y-axis
-    fprintf(file, "%f %f moveto\n", -MISC_MARGIN, limits->y_max * *scale_y + RED_LINE_MARGIN - MISC_MARGIN);
-    fprintf(file, "%f %f lineto\n", 0.0, limits->y_max * *scale_y + RED_LINE_MARGIN);
-    fprintf(file, "%f %f lineto\n", MISC_MARGIN, limits->y_max * *scale_y + RED_LINE_MARGIN - MISC_MARGIN);
+    fprintf(file, "%f %f moveto\n", -MISC_MARGIN + *x_cords_for_y_axis, limits->y_max * *scale_y + RED_LINE_MARGIN - MISC_MARGIN);
+    fprintf(file, "%f %f lineto\n", *x_cords_for_y_axis, limits->y_max * *scale_y + RED_LINE_MARGIN);
+    fprintf(file, "%f %f lineto\n", MISC_MARGIN + *x_cords_for_y_axis, limits->y_max * *scale_y + RED_LINE_MARGIN - MISC_MARGIN);
     fprintf(file, "stroke\n");
 
     // Draw the 'y' label for the Y-axis
-    fprintf(file, "%f %f moveto\n", MISC_MARGIN, limits->y_max * *scale_y + RED_LINE_MARGIN - MISC_MARGIN);
+    fprintf(file, "%f %f moveto\n", MISC_MARGIN + *x_cords_for_y_axis, limits->y_max * *scale_y + RED_LINE_MARGIN - MISC_MARGIN);
     fprintf(file, "(y) show\n");
 }
 
@@ -133,11 +134,13 @@ void draw_limits(const Limits *limits, FILE *file, const double *scale_x, const 
  *
  * @note The function assumes that the constants `PAGE_WIDTH`, `PAGE_HEIGHT`, `MISC_MARGIN`, `FONT_SIZE` are defined in 'draw_utils.h'. The grid lines are drawn in grey with a dashed pattern, and the number labels are positioned near the grid lines.
  */
-void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y) {
+void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y, const double *x_cords_for_y_axis, const double *y_cords_for_x_axis) {
     double const steps_x_to_right = limits->x_max;
     double const steps_x_to_left = fabs(limits->x_min);
     double const steps_y_up = limits->y_max;
     double const steps_y_down = fabs(limits->y_min);
+
+
 
     //TODO: МБ СДЕЛАТЬ ВСЕ В 1-2 ЦИКЛАХ??
 
@@ -147,18 +150,18 @@ void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x,
         // Draw grey lines (grid)
         if (i > 0 && i != steps_x_to_right) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n");
-            fprintf(file, "%f %f moveto\n", i * *scale_x, -PAGE_HEIGHT * 2);
-            fprintf(file, "%f %f lineto\n", i * *scale_x, PAGE_HEIGHT * 2);
+            fprintf(file, "%f %f moveto\n", i * *scale_x, -PAGE_HEIGHT * 2 + *y_cords_for_x_axis);
+            fprintf(file, "%f %f lineto\n", i * *scale_x, PAGE_HEIGHT * 2 + *y_cords_for_x_axis);
             fprintf(file, "stroke\n");
         }
         // Draw black ticks on the x-axis
         fprintf(file, "0 0 0 setrgbcolor\n");
-        fprintf(file, "%f %f moveto\n", i * *scale_x, MISC_MARGIN);
-        fprintf(file, "%f %f lineto\n", i * *scale_x, -MISC_MARGIN);
+        fprintf(file, "%f %f moveto\n", i * *scale_x, MISC_MARGIN + *y_cords_for_x_axis);
+        fprintf(file, "%f %f lineto\n", i * *scale_x, -MISC_MARGIN + *y_cords_for_x_axis);
         fprintf(file, "stroke\n");
 
         // Draw numbers for x-axis ticks
-        fprintf(file, "%f %f moveto\n", i * *scale_x - FONT_SIZE / 4, -FONT_SIZE - MISC_MARGIN);
+        fprintf(file, "%f %f moveto\n", i * *scale_x - FONT_SIZE / 4, -FONT_SIZE - MISC_MARGIN + *y_cords_for_x_axis);
         if (i > 0) {
             fprintf(file, "(%d) show\n", i);
         }
@@ -169,38 +172,38 @@ void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x,
         // Draw grey dashed lines (grid)
         if (i != -steps_x_to_left) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", i * *scale_x, -PAGE_HEIGHT * 2);
-            fprintf(file, "%f %f lineto\n", i * *scale_x, PAGE_HEIGHT * 2);
+            fprintf(file, "%f %f moveto\n", i * *scale_x, -PAGE_HEIGHT * 2 + *y_cords_for_x_axis);
+            fprintf(file, "%f %f lineto\n", i * *scale_x, PAGE_HEIGHT * 2 + *y_cords_for_x_axis);
             fprintf(file, "stroke\n");
         }
         // Draw black ticks on the x-axis
         fprintf(file, "0 0 0 setrgbcolor\n");
-        fprintf(file, "%f %f moveto\n", i * *scale_x, MISC_MARGIN);
-        fprintf(file, "%f %f lineto\n", i * *scale_x, -MISC_MARGIN);
+        fprintf(file, "%f %f moveto\n", i * *scale_x, MISC_MARGIN + *y_cords_for_x_axis);
+        fprintf(file, "%f %f lineto\n", i * *scale_x, -MISC_MARGIN + *y_cords_for_x_axis);
         fprintf(file, "stroke\n");
 
         // Draw numbers for negative x-axis ticks
-        fprintf(file, "%f %f moveto\n", i * *scale_x - FONT_SIZE + FONT_SIZE / 10, -FONT_SIZE - MISC_MARGIN);
+        fprintf(file, "%f %f moveto\n", i * *scale_x - FONT_SIZE + FONT_SIZE / 10, -FONT_SIZE - MISC_MARGIN + *y_cords_for_x_axis);
         fprintf(file, "(%d) show\n", i);
     }
     for (int i = 0; i <= steps_y_up; i++) {
         //Grey lines
         if (i > 0 && i != steps_y_up) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2, i * *scale_y);
-            fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2, i * *scale_y);
+            fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2 + *x_cords_for_y_axis, i * *scale_y);
+            fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2 + *x_cords_for_y_axis, i * *scale_y);
             fprintf(file, "stroke\n");
         }
 
         //Short black lines
         fprintf(file, "0 0 0 setrgbcolor\n");
-        fprintf(file, "%f %f moveto\n", -MISC_MARGIN, i * *scale_y);
-        fprintf(file, "%f %f lineto\n", MISC_MARGIN, i * *scale_y);
+        fprintf(file, "%f %f moveto\n", -MISC_MARGIN + *x_cords_for_y_axis, i * *scale_y);
+        fprintf(file, "%f %f lineto\n", MISC_MARGIN + *x_cords_for_y_axis, i * *scale_y);
         fprintf(file, "stroke\n");
 
         //Numbers
         if (i > 0) {
-            fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1, i * *scale_y - FONT_SIZE / 4);
+            fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1 + *x_cords_for_y_axis, i * *scale_y - FONT_SIZE / 4);
             fprintf(file, "(%d) show\n", i);
         }
     }
@@ -208,18 +211,18 @@ void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x,
         //Grey lines
         if (i != -steps_y_down) {
             fprintf(file, "0.8 0.8 0.8 setrgbcolor\n"); // Полутон (50% серого)
-            fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2, i * *scale_y);
-            fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2, i * *scale_y);
+            fprintf(file, "%f %f moveto\n", -PAGE_WIDTH * 2 + *x_cords_for_y_axis, i * *scale_y);
+            fprintf(file, "%f %f lineto\n", PAGE_WIDTH * 2 + *x_cords_for_y_axis, i * *scale_y);
             fprintf(file, "stroke\n");
         }
         //Short black lines
         fprintf(file, "0 0 0 setrgbcolor\n");
-        fprintf(file, "%f %f moveto\n", -MISC_MARGIN, i * *scale_y);
-        fprintf(file, "%f %f lineto\n", MISC_MARGIN, i * *scale_y);
+        fprintf(file, "%f %f moveto\n", -MISC_MARGIN + *x_cords_for_y_axis, i * *scale_y);
+        fprintf(file, "%f %f lineto\n", MISC_MARGIN + *x_cords_for_y_axis, i * *scale_y);
         fprintf(file, "stroke\n");
 
         //Numbers
-        fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1.0, i * *scale_y - FONT_SIZE / 4);
+        fprintf(file, "%f %f moveto\n", MISC_MARGIN + 1.0 + *x_cords_for_y_axis, i * *scale_y - FONT_SIZE / 4);
         fprintf(file, "(%d) show\n", i);
     }
 }
@@ -306,10 +309,30 @@ void finish(FILE *file) {
 void draw_graph(const Limits *limits, FILE *file, const Node *abstract_syntax_tree) {
     const double scale_x = (PAGE_WIDTH - PAGE_MARGIN) / (limits->x_max - limits->x_min); // X-axis scaling
     const double scale_y = (PAGE_HEIGHT - PAGE_MARGIN) / (limits->y_max - limits->y_min); // Y-axis scaling
+    double x_cords_for_y_axis;
+    double y_cords_for_x_axis;
+
+    if (limits->x_min > 0) {
+        x_cords_for_y_axis = limits->x_min * scale_x;
+    } else if (limits->x_max < 0) {
+        x_cords_for_y_axis = limits->x_max * scale_x;
+
+    } else {
+        x_cords_for_y_axis = 0.0;
+    }
+    if (limits->y_min > 0) {
+        y_cords_for_x_axis = limits->y_min * scale_y;
+    } else if (limits->y_max < 0) {
+        y_cords_for_x_axis = limits->y_max * scale_y;
+
+    } else {
+        y_cords_for_x_axis = 0.0;
+    }
+
     prepare_graph(limits, file, &scale_x, &scale_y);
-    draw_axes(limits, file, &scale_x, &scale_y);
+    draw_axes(limits, file, &scale_x, &scale_y, &x_cords_for_y_axis, &y_cords_for_x_axis);
     draw_limits(limits, file, &scale_x, &scale_y);
-    draw_support_lines(limits, file, &scale_x, &scale_y);
+    draw_support_lines(limits, file, &scale_x, &scale_y, &x_cords_for_y_axis, &y_cords_for_x_axis);
     draw_function(limits, file, &scale_x, &scale_y, abstract_syntax_tree);
     finish(file);
 }

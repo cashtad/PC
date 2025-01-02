@@ -6,7 +6,6 @@
 
 #define ERROR_UNKNOWN_FUNCTION_TEXT "unknown function"
 #define ERROR_UNKNOWN_VARIABLE_TEXT "unknown variable"
-#define ERROR_UNKNOWN_OPERATOR_TEXT "unknown operator"
 #define ERROR_INVALID_ARGUMENT_TEXT "invalid argument"
 #define ERROR_UNKNOWN_OPERATOR_TEXT "unknown binary operator"
 #define ERROR_UNKNOWN_NODE_TEXT "unknown node operator"

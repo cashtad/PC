@@ -43,7 +43,7 @@ void prepare_graph(const Limits *limits, FILE *file, const double *scale_x, cons
  *
  * @note The function assumes that the constants `RED_LINE_MARGIN`, `MISC_MARGIN`, and `FONT_SIZE` are defined in 'draw_utils.h'. The arrowheads are drawn at the positive ends of the axes.
  */
-void draw_axes(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y);
+void draw_axes(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y, const double *x_cords_for_y_axis, const double *y_cords_for_x_axis);
 
 /**
  * @brief Draws the boundary limits of the graph as dashed blue lines on the PostScript file.
@@ -71,7 +71,7 @@ void draw_limits(const Limits *limits, FILE *file, const double *scale_x, const 
  *
  * @note The function assumes that the constants `PAGE_WIDTH`, `PAGE_HEIGHT`, `MISC_MARGIN`, `FONT_SIZE` are defined in 'draw_utils.h'. The grid lines are drawn in grey with a dashed pattern, and the number labels are positioned near the grid lines.
  */
-void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y);
+void draw_support_lines(const Limits *limits, FILE *file, const double *scale_x, const double *scale_y, const double *x_cords_for_y_axis, const double *y_cords_for_x_axis);
 
 /**
  * @brief Draws a mathematical function based on an abstract syntax tree in the PostScript format.
