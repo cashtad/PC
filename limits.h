@@ -1,12 +1,14 @@
-
-
 #ifndef LIMITS_H
 #define LIMITS_H
-
-#define DEFAULT_LIMIT_VALUE 10
-
 #include <stdlib.h>
 
+/**
+ * @brief Defines the default limit value for graphing or function evaluation.
+ *
+ * This constant represents the default value used for the limits in the graphing system or in evaluating the function.
+ * When no specific limits are provided, this value will be used as the default.
+ */
+#define DEFAULT_LIMIT_VALUE 10
 
 /**
  * @brief Structure that defines the limits for the graph's x and y axes.
@@ -43,6 +45,18 @@ typedef struct Limits {
  */
 int parse_limits(const char *limits_str, Limits *limits);
 
+/**
+ * @brief Initializes a Limits structure with default values for x and y limits.
+ *
+ * This function allocates memory for a Limits structure and assigns default values
+ * to its fields. The limits are set using the predefined constant DEFAULT_LIMIT_VALUE.
+ *
+ * @return Pointer to the newly allocated Limits structure. If memory allocation fails,
+ *         the behavior is undefined.
+ *
+ * @note The caller is responsible for freeing the allocated memory using `free`
+ *       to avoid memory leaks.
+ */
 Limits *initialize_limits();
 
 #endif //LIMITS_H

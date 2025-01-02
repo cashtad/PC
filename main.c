@@ -1,11 +1,49 @@
 #include "draw_utils.h"
 
+/**
+ * @brief Static variables used for storing global states in the program.
+ */
+
+/**
+ * @brief Pointer to the limits of the graph.
+ *
+ * This structure holds the limits for the graph axes (x and y), which define the range of values
+ * to be displayed on the graph. It ensures that the graph is rendered within the appropriate
+ * coordinate space.
+ */
 static Limits *limits;
+
+/**
+ * @brief Pointer to the output file.
+ *
+ * This variable holds a pointer to the file where the graph or evaluation results will be written.
+ * The file will be used for output in formats like PostScript (.ps).
+ */
 static FILE *output_file;
+
+/**
+ * @brief Pointer to the lexer.
+ *
+ * The lexer is responsible for breaking the input expression into tokens for parsing. This pointer
+ * is used globally to maintain the state of the lexer throughout the program.
+ */
 static Lexer *lexer;
+
+/**
+ * @brief Pointer to the abstract syntax tree (AST).
+ *
+ * The AST is used to represent the structure of the mathematical expression, where each node
+ * corresponds to an operator, operand, or function. It is used by the evaluator to compute function values.
+ */
 static Node *abstract_syntax_tree;
 
-
+/**
+ * @brief Cleans up the allocated memory and resources.
+ *
+ * This function ensures proper deallocation of memory and closure of file resources.
+ * It frees the lexer, abstract syntax tree, limits, and closes the output file if they were
+ * previously allocated or opened. This helps prevent memory leaks and file handle issues.
+ */
 void cleanup() {
     if (lexer) {
         free(lexer);
@@ -23,30 +61,24 @@ void cleanup() {
 }
 
 /**
- * @brief Main function to generate a graphical plot of a mathematical expression.
+ * @brief Main function for parsing an expression, evaluating it, and generating a graphical representation.
  *
- * This program accepts a mathematical expression as a single-variable function and generates a graph in PostScript format. It supports optional user-defined limits for the x and y axes.
+ * The program expects the following command-line arguments:
+ * - The mathematical expression to be parsed and evaluated.
+ * - The output file name where the graphical representation will be saved.
+ * - Optional argument: A string defining the limits for the graph (in the form of x_min,x_max,y_min,y_max).
  *
- * The function performs the following steps:
- * - Validates the command-line arguments.
- * - If no limits are provided, it uses the default limits of [-10, 10] for both x and y axes.
- * - If limits are provided, they are parsed and validated.
- * - It initializes a lexer to process the mathematical expression.
- * - The expression is parsed into an abstract syntax tree (AST).
- * - The graph is drawn based on the parsed expression and limits.
- * - Outputs to a PostScript (.ps) file.
- * - The memory allocated for the AST is freed before exiting.
+ * The program performs the following tasks:
+ * 1. Initializes limits for the graph.
+ * 2. Parses the expression into an abstract syntax tree.
+ * 3. Generates a graphical representation of the function in a .ps (PostScript) file.
+ * 4. Handles resource cleanup at program termination.
  *
- * @param argc The number of command-line arguments.
- * @param argv An array of strings containing the command-line arguments.
- * - argv[1]: The mathematical expression to plot.
- * - argv[2]: The output file where the graph will be saved.
- * - argv[3] (optional): A string representing the limits for the graph in the format "xmin:xmax:ymin:ymax".
- *
- * @return 0 if the program executed successfully, or an error code if an issue occurred.
+ * @param argc The number of arguments passed to the program.
+ * @param argv An array of strings representing the arguments passed to the program.
+ * @return Returns 0 if the program executes successfully.
  */
 int main(const int argc, char *argv[]) {
-
     atexit(cleanup);
     // Necessary arguments check
     if (argc < 3) {

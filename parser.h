@@ -1,90 +1,85 @@
 #ifndef PARSER_H
 #define PARSER_H
+
 #include "lexer.h"
 
 /**
- * @brief Represents a node in the abstract syntax tree (AST).
+ * @brief Defines a structure for nodes in the Abstract Syntax Tree (AST).
  *
- * This structure defines a node in the AST, which is used to represent mathematical expressions.
- * It can represent different types of nodes:
- * - **NODE_NUM**: A numeric value (e.g., a constant).
- * - **NODE_ID**: A variable identifier (e.g., 'x').
- * - **NODE_FUNC**: A function call, including the function name and its argument.
- * - **NODE_OP**: A binary operator (e.g., addition, subtraction), including the operator symbol and two child nodes.
- *
- * The structure uses a `union` to store the specific value associated with the node's type:
- * - `num`: Stores the numeric value for `NODE_NUM` nodes.
- * - `id`: Stores the identifier string for `NODE_ID` nodes (up to 64 characters).
- * - `func`: A structure containing the function name and the function's argument for `NODE_FUNC` nodes.
- * - `op`: A structure containing the operator symbol (`op`), the left operand (`left`), and the right operand (`right`) for `NODE_OP` nodes.
- *
- * This structure is used to build and manipulate the AST during the parsing process, with each node representing a part of the mathematical expression.
-*/
+ * This structure represents a node in the abstract syntax tree for a mathematical expression.
+ * Each node can be one of several types: a number (NODE_NUM), a variable (NODE_ID), a function (NODE_FUNC),
+ * or an operator (NODE_OP). Additionally, there is a placeholder for error nodes (NODE_ERROR).
+ * The `union` allows different types of data to be stored in the same memory location depending on the node's type.
+ */
 typedef struct Node {
-    enum type { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP, NODE_ERROR } type;
+    // The type of the node (number, variable, function, operator, or error)
+    enum type {
+        NODE_NUM, /**< Numeric constant */
+        NODE_ID, /**< Variable identifier ("x") */
+        NODE_FUNC, /**< Mathematical function (e.g., sin, cos) */
+        NODE_OP, /**< Operator (e.g., +, -, *, /) */
+        NODE_ERROR /**< Error node */
+    } type;
+
+    // A union that holds different data depending on the node type
     union {
-        double num;
-        char id[64];
+        double num; /**< For nodes of type NODE_NUM (number) */
+        char id[MAX_IDENTIFIER_LENGTH]; /**< For nodes of type NODE_ID (identifier, e.g., "x") */
+
+        // For function nodes (NODE_FUNC), stores the function name and the argument node
         struct {
-            char func[64];
-            struct Node *arg;
+            char func[MAX_IDENTIFIER_LENGTH]; /**< Function name (e.g., "sin", "cos") */
+            struct Node *arg; /**< Pointer to the argument of the function */
         } func;
+
+        // For operator nodes (NODE_OP), stores the operator and the left and right operand nodes
         struct {
-            char op;
-            struct Node *left;
-            struct Node *right;
+            char op; /**< Operator (e.g., '+', '-', '*', '/') */
+            struct Node *left; /**< Pointer to the left operand */
+            struct Node *right; /**< Pointer to the right operand */
         } op;
     };
 } Node;
 
 /**
- * @brief Parses an expression from the lexer input and builds an abstract syntax tree (AST).
+ * @brief Parses a mathematical expression into an Abstract Syntax Tree (AST).
  *
- * This function parses a mathematical expression according to operator precedence. It starts by parsing
- * a factor (the basic building block of an expression) and then processes operators in order of precedence
- * (multiplication, division, exponentiation, addition, and subtraction). For each operator encountered,
- * it creates a new node in the abstract syntax tree, with the operator as the parent node and the operands
- * as child nodes. The function continues parsing as long as it encounters operators, chaining them together
- * to form a complete expression.
+ * This function recursively parses an expression consisting of factors, operators,
+ * and handles operator precedence. The parsing process starts with parsing the first factor
+ * (a number, variable, or expression), then iterates over the following tokens to build the
+ * tree for operators (addition, subtraction, multiplication, division, power).
  *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A pointer to the root node of the abstract syntax tree representing the parsed expression.
-*/
+ * The function handles the following operators with left-to-right precedence:
+ * - Addition (+)
+ * - Subtraction (-)
+ * - Multiplication (*)
+ * - Division (/)
+ * - Power (^)
+ *
+ * @param lexer A pointer to the lexer used for tokenizing the input expression.
+ * @return A pointer to the root of the Abstract Syntax Tree (AST) for the expression.
+ */
 Node *parse_expr(Lexer *lexer);
 
 /**
- * @brief Parses a factor from the lexer input and creates a corresponding node in the abstract syntax tree (AST).
+ * @brief Parses a factor in a mathematical expression.
  *
- * A factor is a basic building block of an expression, such as a number, identifier, unary operator,
- * function call, or a parenthesized expression. This function handles each of these cases:
- * - Unary minus: It creates a node representing the unary operator with no left operand.
- * - Numeric literals: It creates a node with the number value.
- * - Identifiers: It creates a node with the identifier name.
- * - Function calls: It creates a node for the function and its argument, which is recursively parsed.
- * - Parenthesized expressions: It parses the expression inside the parentheses and ensures the correct closing parenthesis.
+ * A factor can be a number, an identifier (variable), a function call, a parenthesized expression, or a unary operator (minus).
+ * This function handles these cases by recursively parsing them into an Abstract Syntax Tree (AST).
  *
- * The function returns a pointer to the created node, which is part of the abstract syntax tree representing the parsed expression.
- * If an unexpected token or syntax error is encountered, the program will terminate with an error message.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A pointer to the node representing the parsed factor (e.g., number, identifier, function call, or parenthesized expression).
- * @throws Exits the program if a syntax error occurs, such as an unexpected token or missing parentheses.
-*/
+ * @param lexer A pointer to the lexer used for tokenizing the input expression.
+ * @return A pointer to the root node of the Abstract Syntax Tree (AST) representing the factor.
+ */
 Node *parse_factor(Lexer *lexer);
 
 /**
- * @brief Recursively frees a node and its child nodes in the abstract syntax tree (AST).
+ * @brief Frees the memory allocated for a node and its child nodes in the Abstract Syntax Tree (AST).
  *
- * This function is responsible for deallocating the memory used by a node and all of its descendants in the AST.
- * It handles different node types:
- * - For operation nodes (NODE_OP), it recursively frees both the left and right operands.
- * - For function nodes (NODE_FUNC), it recursively frees the argument node.
- * - For number (NODE_NUM) and identifier (NODE_ID) nodes, no child nodes exist, so only the node itself is freed.
+ * This function recursively frees all nodes in the AST, starting from the given node. It handles different node types
+ * such as operations (which have left and right children), functions (which have arguments), and leaf nodes (numbers and identifiers).
  *
- * The function ensures that all dynamically allocated memory for the AST is properly cleaned up to avoid memory leaks.
- *
- * @param node A pointer to the node to be freed. If the node is NULL, the function does nothing.
-*/
+ * @param node A pointer to the node to be freed.
+ */
 void free_node(Node *node);
 
 #endif //PARSER_H

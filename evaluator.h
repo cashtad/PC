@@ -2,28 +2,21 @@
 #define EVALUATOR_H
 
 #include "parser.h"
-#include <float.h>
-
-
 
 /**
- * @brief Evaluates the expression represented by the abstract syntax tree (AST).
+ * @brief Evaluates the value of a mathematical expression represented by an abstract syntax tree.
  *
- * The `evaluate` function computes the value of an expression based on the AST. The expression
- * is evaluated recursively, starting from the root node. The function handles different types of
- * nodes (numeric values, variable identifiers, functions, and operators) and computes the result
- * accordingly. The variable `x_value` is used when the expression contains an identifier (`x`).
+ * This function recursively traverses the abstract syntax tree (AST) to evaluate the value of a
+ * mathematical expression at a given `x_value`. It supports various types of nodes, including numbers,
+ * variables (represented by 'x'), mathematical functions (like sin, cos, etc.), and operators (like +, -, *, /).
+ * The function also handles unary and binary operators, including power and logarithmic functions.
  *
- * @param node Pointer to the root of the AST or a sub-expression node.
- * @param x_value The value of the variable `x`, which is used when the expression contains an identifier.
+ * @param node    Pointer to the root node of the abstract syntax tree (AST) representing the function.
+ * @param x_value The value of `x` to evaluate the function at.
+ * @return The evaluated value of the function at the given `x_value`.
  *
- * @return The computed result of the expression represented by the AST.
- *
- * @note The function supports various mathematical functions such as sine, cosine, tangent,
- *       logarithms, and others. It also handles binary operators (addition, subtraction,
- *       multiplication, division, and exponentiation). If the expression contains an invalid
- *       operator, function, or logarithmic domain error (e.g., log of a non-positive number),
- *       the program will terminate with an error message.
+ * @note The function supports trigonometric, logarithmic, and other common mathematical functions.
+ *       It throws an error and exits if an unknown function or operator is encountered.
  */
 double evaluate(const Node *node, double x_value);
 

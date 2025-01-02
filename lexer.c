@@ -1,20 +1,8 @@
 #include "lexer.h"
 
-
-/**
- * @brief Initializes a lexer for tokenizing a given text.
- *
- * This function allocates memory for a new lexer, sets its initial state, and checks
- * if the brackets in the provided text are balanced. If the brackets are not balanced,
- * the program will terminate with an error message.
- *
- * @param text The text to be tokenized by the lexer.
- * @return A pointer to the initialized Lexer.
- * @throws Exits the program if the brackets in the text are not balanced.
-*/
 Lexer *initialize_lexer(const char *text) {
     if (!are_brackets_balanced(text)) {
-        error_exit(ERROR_BRACKETS_TEXT, 2);
+        error_exit(ERROR_BRACKETS_TEXT, ERROR_FUNCTION);
     }
     Lexer *lexer = malloc(sizeof(Lexer));
     lexer->text = text;
@@ -24,17 +12,6 @@ Lexer *initialize_lexer(const char *text) {
     return lexer;
 }
 
-/**
- * @brief Checks if the brackets in the given expression are balanced.
- *
- * This function iterates through the characters of the input expression, using a counter
- * to track opening and closing brackets. It returns 1 if the brackets are balanced
- * (i.e., each opening bracket has a corresponding closing bracket in the correct order),
- * and 0 if they are not.
- *
- * @param expression The expression to be checked for balanced brackets.
- * @return 1 if the brackets are balanced, 0 otherwise.
- */
 int are_brackets_balanced(const char *expression) {
     int top = 0;
 
@@ -50,19 +27,9 @@ int are_brackets_balanced(const char *expression) {
             top--;
         }
     }
-
     return top == 0;
 }
 
-/**
- * @brief Advances the lexer to the next character in the text.
- *
- * This function increments the lexer’s position and updates the current character
- * to the next character in the text. If the end of the text is reached, the current
- * character is set to the null character (END_OF_FILE) to indicate the end of the input.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character.
-*/
 void advance(Lexer *lexer) {
     lexer->pos++;
     if (lexer->pos < strlen(lexer->text)) {
@@ -72,34 +39,12 @@ void advance(Lexer *lexer) {
     }
 }
 
-/**
- * @brief Skips over any whitespace characters in the text.
- *
- * This function advances the lexer through the text, skipping all whitespace characters
- * (such as spaces, tabs, and newlines), until a non-whitespace character or the end of
- * the text is reached.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character.
- */
 void skip_whitespace(Lexer *lexer) {
     while (lexer->current_char != END_OF_FILE && isspace(lexer->current_char)) {
         advance(lexer);
     }
 }
 
-/**
- * @brief Processes a number token from the lexer input.
- *
- * This function reads characters from the lexer input, processes a number (including
- * decimal and scientific notation), and returns a token representing the number.
- * It supports both integer and floating-point numbers, as well as exponential notation
- * (e.g., 1.23e+10). If the input is malformed (e.g., multiple decimal points, invalid exponents),
- * the program will exit with an error message.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A Token representing the number parsed from the input.
- * @throws Exits the program if the input number or exponent is invalid.
-*/
 Token process_number(Lexer *lexer) {
     Token token = {TOKEN_NUM, .num = 0.0};
     double fraction = 1.0;
@@ -110,7 +55,6 @@ Token process_number(Lexer *lexer) {
         if (lexer->current_char == DOT) {
             if (is_fraction) {
                 return (Token){TOKEN_ERROR};
-                error_exit(ERROR_NUMBER_TEXT, 2);
             }
             is_fraction = 1;
             advance(lexer);
@@ -139,8 +83,6 @@ Token process_number(Lexer *lexer) {
 
         if (!isdigit(lexer->current_char)) {
             return (Token){TOKEN_ERROR};
-
-            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
 
         int exponent = 0;
@@ -151,18 +93,12 @@ Token process_number(Lexer *lexer) {
 
         if (lexer->current_char == DOT) {
             return (Token){TOKEN_ERROR};
-
-            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (isalpha(lexer->current_char)) {
             return (Token){TOKEN_ERROR};
-
-            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (lexer->current_char == LEFT_PAREN) {
             return (Token){TOKEN_ERROR};
-
-            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (exponent != 0) {
             token.num *= pow(10, exponent_sign * exponent);
@@ -172,31 +108,17 @@ Token process_number(Lexer *lexer) {
     return token;
 }
 
-/**
- * @brief Processes an identifier token from the lexer input.
- *
- * This function reads characters from the lexer input to identify a valid function or variable name.
- * If the identifier is a recognized mathematical function (e.g., "cos", "sin", "tan"), it is classified
- * as a function token. If the identifier is "x", it is treated as a variable identifier. If the identifier
- * is unknown or exceeds the allowed length, an error is raised and the program exits.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A Token representing the identifier or function found in the input.
- * @throws Exits the program if the identifier is unknown, too long, or otherwise invalid.
-*/
 Token process_identifier(Lexer *lexer) {
     Token token;
     size_t len = 0;
     while (isalpha(lexer->current_char)) {
-        if (len < 63) {
+        if (len < MAX_IDENTIFIER_LENGTH) {
             token.func[len++] = lexer->current_char;
         }
         advance(lexer);
     }
-    if (len >= 10) {
+    if (len >= MAX_IDENTIFIER_LENGTH) {
         return (Token){TOKEN_ERROR};
-
-        error_exit(ERROR_IDENTIFIER_TEXT, 2);
     }
     token.func[len] = END_OF_FILE;
     if (strcmp(token.func, X) == 0) {
@@ -221,37 +143,13 @@ Token process_identifier(Lexer *lexer) {
         return token;
     }
     return (Token){TOKEN_ERROR};
-
-    error_exit(ERROR_IDENTIFIER_TEXT, 2);
-
-    token.type = TOKEN_ID;
-    return token; // never reached, but required for compiler to know that the function returns a value
 }
 
-/**
- * @brief Checks if a character is a valid operator.
- *
- * This function checks whether the given character is one of the valid mathematical operators:
- * addition ('+'), subtraction ('-'), multiplication ('*'), division ('/'), or exponentiation ('^').
- *
- * @param c The character to be checked.
- * @return 1 if the character is a valid operator, 0 otherwise.
-*/
+
 int is_operator(const char c) {
     return c == PLUS || c == MINUS || c == MULT || c == DIVISION || c == POWER;
 }
 
-/**
- * @brief Processes an operator token from the lexer input.
- *
- * This function identifies and returns a token corresponding to a mathematical operator
- * such as addition, subtraction, multiplication, division, or exponentiation. If the
- * operator is not recognized, the function will exit the program with an error message.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A Token representing the operator found in the input.
- * @throws Exits the program if the operator is unknown.
-*/
 Token process_operator(Lexer *lexer) {
     const char operator = lexer->current_char;
     advance(lexer);
@@ -261,58 +159,24 @@ Token process_operator(Lexer *lexer) {
         case MULT: return (Token){TOKEN_MUL};
         case DIVISION: return (Token){TOKEN_DIV};
         case POWER: return (Token){TOKEN_POW};
-        default:                 return (Token){TOKEN_ERROR};
-
+        default: return (Token){TOKEN_ERROR};
     }
-    return (Token){TOKEN_ERROR};
 }
 
-/**
- * @brief Checks if a character is a bracket.
- *
- * This function checks whether the given character is a left or right parenthesis ('(' or ')').
- *
- * @param c The character to be checked.
- * @return 1 if the character is a bracket, 0 otherwise.
-*/
 int is_bracket(const char c) {
     return c == LEFT_PAREN || c == RIGHT_PAREN;
 }
 
-/**
- * @brief Processes a bracket token from the lexer input.
- *
- * This function checks the current character to determine if it is a left or right parenthesis ('(' or ')'),
- * advances the lexer to the next character, and returns the corresponding token for the parenthesis.
- * If the current character is a left parenthesis, it returns a `TOKEN_LPAREN` token; if it is a right
- * parenthesis, it returns a `TOKEN_RPAREN` token.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A Token representing either a left parenthesis (TOKEN_LPAREN) or a right parenthesis (TOKEN_RPAREN).
-*/
 Token process_bracket(Lexer *lexer) {
     if (lexer->current_char == LEFT_PAREN) {
         advance(lexer);
         return (Token){TOKEN_LPAREN};
     }
     advance(lexer);
+
     return (Token){TOKEN_RPAREN};
 }
 
-/**
- * @brief Retrieves the next token from the lexer input.
- *
- * This function examines the current character in the lexer input and determines its type
- * (whitespace, number, identifier, operator, or bracket). It processes the character accordingly,
- * skipping whitespace, parsing numbers or identifiers, and returning the corresponding token.
- * If an unrecognized character is encountered, the program will exit with an error message.
- * The function continues processing until the end of the input is reached, returning an
- * end-of-file (EOF) token when no more tokens are available.
- *
- * @param lexer A pointer to the lexer that tracks the current position and character in the input text.
- * @return A Token representing the next token in the input. Returns a `TOKEN_EOF` token at the end of the input.
- * @throws Exits the program if an unknown character is encountered.
-*/
 Token get_next_token(Lexer *lexer) {
     while (lexer->current_char != END_OF_FILE) {
         if (isspace(lexer->current_char)) {
@@ -334,8 +198,6 @@ Token get_next_token(Lexer *lexer) {
             return process_bracket(lexer);
         }
         return (Token){TOKEN_ERROR};
-        error_exit(ERROR_UNKNOWN_CHARACTER, 2);
     }
     return (Token){TOKEN_ERROR};
-    return (Token){TOKEN_EOF};
 }

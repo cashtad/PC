@@ -1,8 +1,5 @@
 #include "err.h"
 
-
-
-
 /**
  * @brief Prints an error message and exits the program with the specified exit code.
  *
