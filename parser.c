@@ -16,6 +16,7 @@
 */
 Node *parse_expr(Lexer *lexer) {
     Node *node = parse_factor(lexer);
+    if (node->type == NODE_ERROR) return node;
     Token token = get_next_token(lexer);
 
     while (token.type == TOKEN_PLUS || token.type == TOKEN_MINUS || token.type == TOKEN_MUL || token.type == TOKEN_DIV
@@ -92,6 +93,7 @@ Node *parse_factor(Lexer *lexer) {
         // Expect '('
         token = get_next_token(lexer);
         if (token.type != TOKEN_LPAREN) {
+            return node;
             error_exit(ERROR_FUNCTION_LEFT_PAREN_TEXT, 2);
 
         }
@@ -100,6 +102,8 @@ Node *parse_factor(Lexer *lexer) {
         token = get_next_token(lexer);
         // Expect ')'
         if (token.type != TOKEN_RPAREN) {
+            return node;
+
             error_exit(ERROR_FUNCTION_RIGHT_PAREN_TEXT, 2);
 
         }
@@ -109,9 +113,13 @@ Node *parse_factor(Lexer *lexer) {
         token = get_next_token(lexer);
         // Expect ')'
         if (token.type != TOKEN_RPAREN) {
+            return node;
             error_exit(ERROR_FUNCTION_RIGHT_PAREN_TEXT, 2);
         }
     } else {
+        node = (Node *) malloc(sizeof(Node));
+        node->type = NODE_ERROR;
+        return node;
         error_exit(ERROR_UNEXPECTED_TOKEN_TEXT, 2);
     }
     return node;

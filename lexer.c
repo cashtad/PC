@@ -109,6 +109,7 @@ Token process_number(Lexer *lexer) {
     while (isdigit(lexer->current_char) || lexer->current_char == DOT) {
         if (lexer->current_char == DOT) {
             if (is_fraction) {
+                return (Token){TOKEN_ERROR};
                 error_exit(ERROR_NUMBER_TEXT, 2);
             }
             is_fraction = 1;
@@ -137,6 +138,8 @@ Token process_number(Lexer *lexer) {
         }
 
         if (!isdigit(lexer->current_char)) {
+            return (Token){TOKEN_ERROR};
+
             error_exit(ERROR_EXPONENT_TEXT, 2);
         }
 
@@ -147,12 +150,18 @@ Token process_number(Lexer *lexer) {
         }
 
         if (lexer->current_char == DOT) {
+            return (Token){TOKEN_ERROR};
+
             error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (isalpha(lexer->current_char)) {
+            return (Token){TOKEN_ERROR};
+
             error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (lexer->current_char == LEFT_PAREN) {
+            return (Token){TOKEN_ERROR};
+
             error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (exponent != 0) {
@@ -185,6 +194,8 @@ Token process_identifier(Lexer *lexer) {
         advance(lexer);
     }
     if (len >= 10) {
+        return (Token){TOKEN_ERROR};
+
         error_exit(ERROR_IDENTIFIER_TEXT, 2);
     }
     token.func[len] = END_OF_FILE;
@@ -209,6 +220,8 @@ Token process_identifier(Lexer *lexer) {
         token.type = TOKEN_FUNC;
         return token;
     }
+    return (Token){TOKEN_ERROR};
+
     error_exit(ERROR_IDENTIFIER_TEXT, 2);
 
     token.type = TOKEN_ID;
@@ -248,9 +261,10 @@ Token process_operator(Lexer *lexer) {
         case MULT: return (Token){TOKEN_MUL};
         case DIVISION: return (Token){TOKEN_DIV};
         case POWER: return (Token){TOKEN_POW};
-        default: error_exit(ERROR_UNKNOWN_OPERATOR_TEXT, 2);
+        default:                 return (Token){TOKEN_ERROR};
+
     }
-    return (Token){TOKEN_EOF}; // never reached, but required for compiler to know that the function returns a value
+    return (Token){TOKEN_ERROR};
 }
 
 /**
@@ -319,9 +333,9 @@ Token get_next_token(Lexer *lexer) {
         if (is_bracket(lexer->current_char)) {
             return process_bracket(lexer);
         }
-
+        return (Token){TOKEN_ERROR};
         error_exit(ERROR_UNKNOWN_CHARACTER, 2);
     }
-
+    return (Token){TOKEN_ERROR};
     return (Token){TOKEN_EOF};
 }

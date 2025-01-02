@@ -21,7 +21,7 @@
  * This structure is used to build and manipulate the AST during the parsing process, with each node representing a part of the mathematical expression.
 */
 typedef struct Node {
-    enum type { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP } type;
+    enum type { NODE_NUM, NODE_ID, NODE_FUNC, NODE_OP, NODE_ERROR } type;
     union {
         double num;
         char id[64];

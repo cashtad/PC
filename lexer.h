@@ -92,7 +92,8 @@ typedef enum TokenType {
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_POW,
-    TOKEN_EOF
+    TOKEN_EOF,
+    TOKEN_ERROR
 } TokenType;
 
 /**
