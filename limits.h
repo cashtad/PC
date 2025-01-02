@@ -3,6 +3,8 @@
 #ifndef LIMITS_H
 #define LIMITS_H
 
+#define DEFAULT_LIMIT_VALUE 10
+
 #include <stdlib.h>
 
 

@@ -1,5 +1,26 @@
 #include "draw_utils.h"
 
+static Limits *limits;
+static FILE *output_file;
+static Lexer *lexer;
+static Node *abstract_syntax_tree;
+
+
+void cleanup() {
+    if (lexer) {
+        free(lexer);
+    }
+    if (abstract_syntax_tree) {
+        free_node(abstract_syntax_tree);
+    }
+
+    if (limits) {
+        free(limits);
+    }
+    if (output_file) {
+        fclose(output_file);
+    }
+}
 
 /**
  * @brief Main function to generate a graphical plot of a mathematical expression.
@@ -25,52 +46,37 @@
  * @return 0 if the program executed successfully, or an error code if an issue occurred.
  */
 int main(const int argc, char *argv[]) {
+
+    atexit(cleanup);
     // Necessary arguments check
     if (argc < 3) {
-        error_exit(
-            "invalid input. Correct usage: <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n",
-            1);
+        error_exit(ERROR_ARGS_TEXT,ERROR_ARGS);
     }
 
     const char *expression = argv[1];
     const char *output_file_name = argv[2];
 
-    printf("Expression: %s\n", expression);
     // Default values for limits
-    Limits *limits = initialize_limits();
-
+    limits = initialize_limits();
 
     // If limits were defined in arguments
     if (argc == 4) {
         if (parse_limits(argv[3], limits) == 1) {
-            error_exit(
-                "while parsing limits string.\nCorrect usage: ⟨xmin⟩:⟨xmax⟩:⟨ymin⟩:⟨ymax⟩\nEnsure that xmin < xmax and ymin < ymax",
-                4);
+            error_exit(ERROR_LIMITS_TEXT,ERROR_LIMITS);
         }
     }
 
-
     // Open .ps file for write mode
-    FILE *output_file = fopen(output_file_name, "w");
+    output_file = fopen(output_file_name, "w");
     if (!output_file) {
-        error_exit("unable to open output file", 3);
+        error_exit(ERROR_FILE_TEXT, ERROR_FILE);
     }
 
+    lexer = initialize_lexer(expression);
 
-    Lexer *lexer = initialize_lexer(expression);
-
-    Node *abstract_syntax_tree = parse_expr(lexer);
-
-    free(lexer);
+    abstract_syntax_tree = parse_expr(lexer);
 
     draw_graph(limits, output_file, abstract_syntax_tree);
-
-    free_node(abstract_syntax_tree);
-
-    free(limits);
-
-    fclose(output_file);
-
 
     return 0;
 }

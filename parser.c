@@ -23,15 +23,15 @@ Node *parse_expr(Lexer *lexer) {
         Node *new_node = malloc(sizeof(Node));
         new_node->type = NODE_OP;
         if (token.type == TOKEN_MUL) {
-            new_node->op.op = '*';
+            new_node->op.op = MULT;
         } else if (token.type == TOKEN_DIV) {
-            new_node->op.op = '/';
+            new_node->op.op = DIVISION;
         } else if (token.type == TOKEN_POW) {
-            new_node->op.op = '^';
+            new_node->op.op = POWER;
         } else if (token.type == TOKEN_PLUS) {
-            new_node->op.op = '+';
+            new_node->op.op = PLUS;
         } else {
-            new_node->op.op = '-';
+            new_node->op.op = MINUS;
         }
         new_node->op.left = node;
         new_node->op.right = parse_factor(lexer);
@@ -71,7 +71,7 @@ Node *parse_factor(Lexer *lexer) {
     if (token.type == TOKEN_MINUS) {
         node = (Node *) malloc(sizeof(Node));
         node->type = NODE_OP;
-        node->op.op = '-';
+        node->op.op = MINUS;
         node->op.left = NULL; // // No left operand for unary operators
         node->op.right = parse_factor(lexer); // Parse right operand
     } else if (token.type == TOKEN_NUM) {
@@ -89,27 +89,30 @@ Node *parse_factor(Lexer *lexer) {
         node = (Node *) malloc(sizeof(Node));
         node->type = NODE_FUNC;
         strcpy(node->func.func, token.func);
-
-        token = get_next_token(lexer); // Expect '('
+        // Expect '('
+        token = get_next_token(lexer);
         if (token.type != TOKEN_LPAREN) {
-            error_exit("Error: expected '(' after function\n", 2);
+            error_exit(ERROR_FUNCTION_LEFT_PAREN_TEXT, 2);
 
         }
-        node->func.arg = parse_expr(lexer); // Parse function argument
-        token = get_next_token(lexer); // Expect ')'
+        // Parse function argument
+        node->func.arg = parse_expr(lexer);
+        token = get_next_token(lexer);
+        // Expect ')'
         if (token.type != TOKEN_RPAREN) {
-            error_exit("Error: expected closing parenthesis\n", 2);
+            error_exit(ERROR_FUNCTION_RIGHT_PAREN_TEXT, 2);
 
         }
     } else if (token.type == TOKEN_LPAREN) {
         // Handle parenthesized expressions
         node = parse_expr(lexer);
-        token = get_next_token(lexer); // Expect ')'
+        token = get_next_token(lexer);
+        // Expect ')'
         if (token.type != TOKEN_RPAREN) {
-            error_exit("Error: expected closing parenthesis\n", 2);
+            error_exit(ERROR_FUNCTION_RIGHT_PAREN_TEXT, 2);
         }
     } else {
-        error_exit("Error: unexpected token\n", 2);
+        error_exit(ERROR_UNEXPECTED_TOKEN_TEXT, 2);
     }
     return node;
 }

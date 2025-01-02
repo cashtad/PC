@@ -35,10 +35,10 @@ int parse_limits(const char *limits_str, Limits *limits) {
 }
 Limits *initialize_limits() {
     Limits *limits = malloc(sizeof(Limits));
-    limits->x_min = -10;
-    limits->x_max = 10;
-    limits->y_min = -10;
-    limits->y_max = 10;
+    limits->x_min = -DEFAULT_LIMIT_VALUE;
+    limits->x_max = DEFAULT_LIMIT_VALUE;
+    limits->y_min = -DEFAULT_LIMIT_VALUE;
+    limits->y_max = DEFAULT_LIMIT_VALUE;
 
     return limits;
 }

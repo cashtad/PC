@@ -1,5 +1,6 @@
 #include "draw_utils.h"
 
+
 /**
  * @brief Initializes the PostScript file for graph generation, including setting up page size, font, and coordinate system.
  *
@@ -240,8 +241,18 @@ void draw_function(const Limits *limits, FILE *file, const double *scale_x, cons
                    const Node *abstract_syntax_tree) {
     int first_point = 1;
     int out_of_range = 0;
-    for (double x = limits->x_min + X_EVALUATION_STEP; x < limits->x_max; x += X_EVALUATION_STEP) {
+    for (double x = limits->x_min; x <= limits->x_max; x += X_EVALUATION_STEP) {
         const double y = evaluate(abstract_syntax_tree, x);
+        // For invalid evaluate case, for example if 2/x and x == 0
+        if (isnan(y)) {
+            if (!first_point) {
+                fprintf(file, "stroke\n"); // Close the current path if the function can not be evaluated in this point
+            }
+            first_point = 1;
+            out_of_range = 1;
+            continue;
+
+        }
         if (y > limits->y_max || y < limits->y_min) {
             if (!out_of_range) {
                 first_point = 1;

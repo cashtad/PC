@@ -2,10 +2,9 @@
 #define EVALUATOR_H
 
 #include "parser.h"
-#include "evaluator.h"
-#include <string.h>
-#include "err.h"
-#include <math.h>
+#include <float.h>
+
+
 
 /**
  * @brief Evaluates the expression represented by the abstract syntax tree (AST).

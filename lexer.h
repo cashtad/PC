@@ -3,9 +3,35 @@
 
 #include <ctype.h>
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
 #include "err.h"
+
+#define SIN "sin"
+#define COS "cos"
+#define TAN "tan"
+#define ABS "abs"
+#define LN "ln"
+#define LOG "log"
+#define ASIN "asin"
+#define ACOS "acos"
+#define ATAN "atan"
+#define SINH "sinh"
+#define COSH "cosh"
+#define TANH "tanh"
+#define EXP "exp"
+#define MINUS_UN '-'
+#define PLUS '+'
+#define MINUS '-'
+#define MULT '*'
+#define DIVISION '/'
+#define POWER '^'
+#define LEFT_PAREN '('
+#define RIGHT_PAREN ')'
+#define DOT '.'
+#define X "x"
+#define END_OF_FILE '\0'
+#define EXPONENT_SIGN 'e'
+#define EXPONENT_SIGN_CAP 'E'
 
 /**
  * @brief Represents a lexer that tokenizes the input text.

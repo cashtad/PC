@@ -1,5 +1,6 @@
 #include "evaluator.h"
 
+
 /**
  * @brief Evaluates the expression represented by the abstract syntax tree (AST).
  *
@@ -30,37 +31,27 @@ double evaluate(const Node *node, const double x_value) {
         case NODE_FUNC: {
             const double arg_value = evaluate(node->func.arg, x_value);
 
-            if (strcmp(node->func.func, "sin") == 0) return sin(arg_value);
-            if (strcmp(node->func.func, "cos") == 0) return cos(arg_value);
-            if (strcmp(node->func.func, "tan") == 0) return tan(arg_value);
-            if (strcmp(node->func.func, "abs") == 0) return fabs(arg_value);
-            if (strcmp(node->func.func, "ln") == 0) {
-                if (arg_value <= 0) {
-                    error_exit("logarithm of non-positive number", 2);
-                }
-                return log(arg_value);
-            }
-            if (strcmp(node->func.func, "log") == 0) {
-                if (arg_value <= 0) {
-                    error_exit("logarithm of non-positive number", 2);
-                }
-                return log10(arg_value);
-            }
-            if (strcmp(node->func.func, "asin") == 0) return asin(arg_value);
-            if (strcmp(node->func.func, "acos") == 0) return acos(arg_value);
-            if (strcmp(node->func.func, "atan") == 0) return atan(arg_value);
-            if (strcmp(node->func.func, "sinh") == 0) return sinh(arg_value);
-            if (strcmp(node->func.func, "cosh") == 0) return cosh(arg_value);
-            if (strcmp(node->func.func, "tanh") == 0) return tanh(arg_value);
-            if (strcmp(node->func.func, "exp") == 0) return exp(arg_value);
+            if (strcmp(node->func.func, SIN) == 0) return sin(arg_value);
+            if (strcmp(node->func.func, COS) == 0) return cos(arg_value);
+            if (strcmp(node->func.func, TAN) == 0) return tan(arg_value);
+            if (strcmp(node->func.func, ABS) == 0) return fabs(arg_value);
+            if (strcmp(node->func.func, LN) == 0) return log(arg_value);
+            if (strcmp(node->func.func, LOG) == 0) return log10(arg_value);
+            if (strcmp(node->func.func, ASIN) == 0) return asin(arg_value);
+            if (strcmp(node->func.func, ACOS) == 0) return acos(arg_value);
+            if (strcmp(node->func.func, ATAN) == 0) return atan(arg_value);
+            if (strcmp(node->func.func, SINH) == 0) return sinh(arg_value);
+            if (strcmp(node->func.func, COSH) == 0) return cosh(arg_value);
+            if (strcmp(node->func.func, TANH) == 0) return tanh(arg_value);
+            if (strcmp(node->func.func, EXP) == 0) return exp(arg_value);
 
-            error_exit("unknown function", 2);
+            error_exit(ERROR_UNKNOWN_FUNCTION_TEXT, 2);
         }
 
         case NODE_OP: {
             if (node->op.left == NULL) {
                 const double right_value = evaluate(node->op.right, x_value);
-                if (node->op.op == '-') {
+                if (node->op.op == MINUS_UN) {
                     return -right_value;
                 }
             }
@@ -68,26 +59,23 @@ double evaluate(const Node *node, const double x_value) {
             const double right_value = evaluate(node->op.right, x_value);
 
             switch (node->op.op) {
-                case '+':
+                case PLUS:
                     return left_value + right_value;
-                case '-':
+                case MINUS:
                     return left_value - right_value;
-                case '*':
+                case MULT:
                     return left_value * right_value;
-                case '/':
-                    if (right_value == 0) {
-                        error_exit("division by zero", 2);
-                    }
+                case DIVISION:
                     return left_value / right_value;
-                case '^':
+                case POWER:
                     return pow(left_value, right_value);
                 default:
-                    error_exit("unknown binary operator", 2);
+                    error_exit(ERROR_UNKNOWN_OPERATOR_TEXT, 2);
             }
         }
 
         default:
-            error_exit("unknown node type", 2);
+            error_exit(ERROR_UNKNOWN_NODE_TEXT, 2);
     }
     return 0; // never reached, but required for compiler to know that the function returns a value
 }

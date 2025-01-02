@@ -15,7 +15,7 @@
 Lexer *initialize_lexer(const char *text) {
     Lexer *lexer = malloc(sizeof(Lexer));
     if (!are_brackets_balanced(text)) {
-        error_exit("wrong usage of brackets! Ensure that brackets are balanced and used in right positions", 2);
+        error_exit(ERROR_BRACKETS_TEXT, 2);
     }
     lexer->text = text;
     lexer->pos = 0;
@@ -38,12 +38,12 @@ Lexer *initialize_lexer(const char *text) {
 int are_brackets_balanced(const char *expression) {
     int top = 0;
 
-    for (int i = 0; expression[i] != '\0'; i++) {
+    for (int i = 0; expression[i] != END_OF_FILE; i++) {
         const char current = expression[i];
 
-        if (current == '(') {
+        if (current == LEFT_PAREN) {
             top++;
-        } else if (current == ')') {
+        } else if (current == RIGHT_PAREN) {
             if (top == 0) {
                 return 0;
             }
@@ -59,7 +59,7 @@ int are_brackets_balanced(const char *expression) {
  *
  * This function increments the lexer’s position and updates the current character
  * to the next character in the text. If the end of the text is reached, the current
- * character is set to the null character ('\0') to indicate the end of the input.
+ * character is set to the null character (END_OF_FILE) to indicate the end of the input.
  *
  * @param lexer A pointer to the lexer that tracks the current position and character.
 */
@@ -68,7 +68,7 @@ void advance(Lexer *lexer) {
     if (lexer->pos < strlen(lexer->text)) {
         lexer->current_char = lexer->text[lexer->pos];
     } else {
-        lexer->current_char = '\0';
+        lexer->current_char = END_OF_FILE;
     }
 }
 
@@ -82,7 +82,7 @@ void advance(Lexer *lexer) {
  * @param lexer A pointer to the lexer that tracks the current position and character.
  */
 void skip_whitespace(Lexer *lexer) {
-    while (lexer->current_char != '\0' && isspace(lexer->current_char)) {
+    while (lexer->current_char != END_OF_FILE && isspace(lexer->current_char)) {
         advance(lexer);
     }
 }
@@ -106,10 +106,10 @@ Token process_number(Lexer *lexer) {
     int is_fraction = 0;
 
     // For lexing int and float numbers
-    while (isdigit(lexer->current_char) || lexer->current_char == '.') {
-        if (lexer->current_char == '.') {
+    while (isdigit(lexer->current_char) || lexer->current_char == DOT) {
+        if (lexer->current_char == DOT) {
             if (is_fraction) {
-                error_exit("wrong function input", 2);
+                error_exit(ERROR_NUMBER_TEXT, 2);
             }
             is_fraction = 1;
             advance(lexer);
@@ -125,19 +125,19 @@ Token process_number(Lexer *lexer) {
     }
 
     // For exponential part
-    if (lexer->current_char == 'E' || lexer->current_char == 'e') {
+    if (lexer->current_char == EXPONENT_SIGN_CAP || lexer->current_char == EXPONENT_SIGN) {
         advance(lexer);
         int exponent_sign = 1;
 
-        if (lexer->current_char == '+' || lexer->current_char == '-') {
-            if (lexer->current_char == '-') {
+        if (lexer->current_char == PLUS || lexer->current_char == MINUS) {
+            if (lexer->current_char == MINUS) {
                 exponent_sign = -1;
             }
             advance(lexer);
         }
 
         if (!isdigit(lexer->current_char)) {
-            error_exit("wrong exp usage", 2);
+            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
 
         int exponent = 0;
@@ -146,14 +146,14 @@ Token process_number(Lexer *lexer) {
             advance(lexer);
         }
 
-        if (lexer->current_char == '.') {
-            error_exit("wrong exp usage. Exponent cannot be a floating point number", 2);
+        if (lexer->current_char == DOT) {
+            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (isalpha(lexer->current_char)) {
-            error_exit("wrong exp usage. Exponent cannot contain letters", 2);
+            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
-        if (lexer->current_char == '(') {
-            error_exit("wrong exp usage. Exponent cannot contain '('", 2);
+        if (lexer->current_char == LEFT_PAREN) {
+            error_exit(ERROR_EXPONENT_TEXT, 2);
         }
         if (exponent != 0) {
             token.num *= pow(10, exponent_sign * exponent);
@@ -185,31 +185,31 @@ Token process_identifier(Lexer *lexer) {
         advance(lexer);
     }
     if (len >= 10) {
-        error_exit("Identifier too long", 2);
+        error_exit(ERROR_IDENTIFIER_TEXT, 2);
     }
-    token.func[len] = '\0';
-    if (strcmp(token.func, "x") == 0) {
+    token.func[len] = END_OF_FILE;
+    if (strcmp(token.func, X) == 0) {
         token.type = TOKEN_ID;
         return token;
     }
 
-    if (strcmp(token.func, "cos") == 0 ||
-        strcmp(token.func, "sin") == 0 ||
-        strcmp(token.func, "tan") == 0 ||
-        strcmp(token.func, "abs") == 0 ||
-        strcmp(token.func, "ln") == 0 ||
-        strcmp(token.func, "log") == 0 ||
-        strcmp(token.func, "asin") == 0 ||
-        strcmp(token.func, "acos") == 0 ||
-        strcmp(token.func, "atan") == 0 ||
-        strcmp(token.func, "sinh") == 0 ||
-        strcmp(token.func, "cosh") == 0 ||
-        strcmp(token.func, "tanh") == 0 ||
-        strcmp(token.func, "exp") == 0) {
+    if (strcmp(token.func, COS) == 0 ||
+        strcmp(token.func, SIN) == 0 ||
+        strcmp(token.func, TAN) == 0 ||
+        strcmp(token.func, ABS) == 0 ||
+        strcmp(token.func, LN) == 0 ||
+        strcmp(token.func, LOG) == 0 ||
+        strcmp(token.func, ASIN) == 0 ||
+        strcmp(token.func, ACOS) == 0 ||
+        strcmp(token.func, ATAN) == 0 ||
+        strcmp(token.func, SINH) == 0 ||
+        strcmp(token.func, COSH) == 0 ||
+        strcmp(token.func, TANH) == 0 ||
+        strcmp(token.func, EXP) == 0) {
         token.type = TOKEN_FUNC;
         return token;
     }
-    error_exit("unknown identifier", 2);
+    error_exit(ERROR_IDENTIFIER_TEXT, 2);
 
     token.type = TOKEN_ID;
     return token; // never reached, but required for compiler to know that the function returns a value
@@ -225,7 +225,7 @@ Token process_identifier(Lexer *lexer) {
  * @return 1 if the character is a valid operator, 0 otherwise.
 */
 int is_operator(const char c) {
-    return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
+    return c == PLUS || c == MINUS || c == MULT || c == DIVISION || c == POWER;
 }
 
 /**
@@ -243,12 +243,12 @@ Token process_operator(Lexer *lexer) {
     const char operator = lexer->current_char;
     advance(lexer);
     switch (operator) {
-        case '+': return (Token){TOKEN_PLUS};
-        case '-': return (Token){TOKEN_MINUS};
-        case '*': return (Token){TOKEN_MUL};
-        case '/': return (Token){TOKEN_DIV};
-        case '^': return (Token){TOKEN_POW};
-        default: error_exit("Unknown operator", 2);
+        case PLUS: return (Token){TOKEN_PLUS};
+        case MINUS: return (Token){TOKEN_MINUS};
+        case MULT: return (Token){TOKEN_MUL};
+        case DIVISION: return (Token){TOKEN_DIV};
+        case POWER: return (Token){TOKEN_POW};
+        default: error_exit(ERROR_UNKNOWN_OPERATOR_TEXT, 2);
     }
     return (Token){TOKEN_EOF}; // never reached, but required for compiler to know that the function returns a value
 }
@@ -262,7 +262,7 @@ Token process_operator(Lexer *lexer) {
  * @return 1 if the character is a bracket, 0 otherwise.
 */
 int is_bracket(const char c) {
-    return c == '(' || c == ')';
+    return c == LEFT_PAREN || c == RIGHT_PAREN;
 }
 
 /**
@@ -277,7 +277,7 @@ int is_bracket(const char c) {
  * @return A Token representing either a left parenthesis (TOKEN_LPAREN) or a right parenthesis (TOKEN_RPAREN).
 */
 Token process_bracket(Lexer *lexer) {
-    if (lexer->current_char == '(') {
+    if (lexer->current_char == LEFT_PAREN) {
         advance(lexer);
         return (Token){TOKEN_LPAREN};
     }
@@ -300,13 +300,13 @@ Token process_bracket(Lexer *lexer) {
  * @throws Exits the program if an unknown character is encountered.
 */
 Token get_next_token(Lexer *lexer) {
-    while (lexer->current_char != '\0') {
+    while (lexer->current_char != END_OF_FILE) {
         if (isspace(lexer->current_char)) {
             skip_whitespace(lexer);
             continue;
         }
 
-        if (isdigit(lexer->current_char) || lexer->current_char == '.') {
+        if (isdigit(lexer->current_char) || lexer->current_char == DOT) {
             return process_number(lexer);
         }
 
@@ -320,7 +320,7 @@ Token get_next_token(Lexer *lexer) {
             return process_bracket(lexer);
         }
 
-        error_exit("unknown character", 2);
+        error_exit(ERROR_UNKNOWN_CHARACTER, 2);
     }
 
     return (Token){TOKEN_EOF};
