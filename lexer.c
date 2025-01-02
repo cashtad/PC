@@ -13,10 +13,10 @@
  * @throws Exits the program if the brackets in the text are not balanced.
 */
 Lexer *initialize_lexer(const char *text) {
-    Lexer *lexer = malloc(sizeof(Lexer));
     if (!are_brackets_balanced(text)) {
         error_exit(ERROR_BRACKETS_TEXT, 2);
     }
+    Lexer *lexer = malloc(sizeof(Lexer));
     lexer->text = text;
     lexer->pos = 0;
     lexer->current_char = text[0];
