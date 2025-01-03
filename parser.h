@@ -42,35 +42,52 @@ typedef struct Node {
 } Node;
 
 /**
- * @brief Parses a mathematical expression into an Abstract Syntax Tree (AST).
+ * @brief Parses a mathematical expression from the lexer.
  *
- * This function recursively parses an expression consisting of factors, operators,
- * and handles operator precedence. The parsing process starts with parsing the first factor
- * (a number, variable, or expression), then iterates over the following tokens to build the
- * tree for operators (addition, subtraction, multiplication, division, power).
+ * This function processes the expression provided by the lexer. It first attempts to parse a low-priority expression
+ * and then checks for any remaining characters in the input to ensure the entire expression has been processed.
+ * If any unexpected characters are found, an error is raised and the program exits.
  *
- * The function handles the following operators with left-to-right precedence:
- * - Addition (+)
- * - Subtraction (-)
- * - Multiplication (*)
- * - Division (/)
- * - Power (^)
- *
- * @param lexer A pointer to the lexer used for tokenizing the input expression.
- * @return A pointer to the root of the Abstract Syntax Tree (AST) for the expression.
+ * @param lexer A pointer to the lexer, which contains the expression to be parsed.
+ * @return A pointer to the root node of the parsed abstract syntax tree (AST) representing the expression.
  */
-Node *parse_expr(Lexer *lexer);
+Node *parse(Lexer *lexer);
 
 /**
- * @brief Parses a factor in a mathematical expression.
+ * @brief Parses low priority expressions (addition and subtraction) in the mathematical expression.
  *
- * A factor can be a number, an identifier (variable), a function call, a parenthesized expression, or a unary operator (minus).
- * This function handles these cases by recursively parsing them into an Abstract Syntax Tree (AST).
+ * This function handles the parsing of low-priority operations, which are addition and subtraction,
+ * by recursively calling higher priority expression parsing functions. The function creates a new node
+ * for each operation and recursively builds the abstract syntax tree (AST).
  *
- * @param lexer A pointer to the lexer used for tokenizing the input expression.
- * @return A pointer to the root node of the Abstract Syntax Tree (AST) representing the factor.
+ * @param lexer A pointer to the lexer that provides tokens for parsing.
+ * @return A pointer to the root node of the AST representing the parsed expression.
  */
-Node *parse_factor(Lexer *lexer);
+Node *parse_low_priority_expression(Lexer *lexer);
+
+/**
+ * @brief Parses high priority expressions (multiplication, division, and exponentiation).
+ *
+ * This function handles the parsing of high-priority operations, such as multiplication, division,
+ * and exponentiation, by recursively calling operand parsing functions. The function creates a new node
+ * for each operation and builds the AST for high priority expressions.
+ *
+ * @param lexer A pointer to the lexer that provides tokens for parsing.
+ * @return A pointer to the root node of the AST representing the parsed high-priority expression.
+ */
+Node *parse_high_priority_expression(Lexer *lexer);
+
+/**
+ * @brief Parses operands in the mathematical expression.
+ *
+ * This function parses the basic elements (operands) of the expression, such as numeric literals,
+ * identifiers, function calls, and sub-expressions inside parentheses. It handles unary minus operations
+ * and recursively calls the appropriate function to parse the right operand if necessary.
+ *
+ * @param lexer A pointer to the lexer that provides tokens for parsing.
+ * @return A pointer to the node representing the parsed operand.
+ */
+Node *parse_operand(Lexer *lexer);
 
 /**
  * @brief Frees the memory allocated for a node and its child nodes in the Abstract Syntax Tree (AST).

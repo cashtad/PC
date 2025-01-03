@@ -9,21 +9,21 @@
  *
  * This error message is used when an unrecognized function name is encountered in the mathematical expression.
  */
-#define ERROR_UNKNOWN_FUNCTION_TEXT "problem with expression: unknown function"
+#define ERROR_UNKNOWN_FUNCTION_TEXT "unknown function"
 
 /**
  * @brief Error message for an unknown operator in the expression.
  *
  * This error message is triggered when an unrecognized binary operator is found in the mathematical expression.
  */
-#define ERROR_UNKNOWN_OPERATOR_TEXT "problem with expression: unknown binary operator"
+#define ERROR_UNKNOWN_OPERATOR_TEXT "unknown binary operator"
 
 /**
  * @brief Error message for an unknown node operator in the abstract syntax tree.
  *
  * This error message is used when an invalid or unexpected node operator is encountered during the expression parsing.
  */
-#define ERROR_UNKNOWN_NODE_TEXT "problem with expression: unknown node operator"
+#define ERROR_UNKNOWN_NODE_TEXT "unknown node operator"
 
 /**
  * @brief Error message for incorrect bracket usage in the expression.
@@ -31,7 +31,14 @@
  * This error occurs when there is an imbalance or incorrect positioning of brackets in the expression.
  * The user should ensure that brackets are balanced and used correctly.
  */
-#define ERROR_BRACKETS_TEXT "problem with expression: wrong usage of brackets! Ensure that brackets are balanced and used in right positions"
+#define ERROR_BRACKETS_TEXT "wrong usage of brackets!\nEnsure that brackets are balanced and used in right positions"
+/**
+ * @brief Error message for incorrect content in the expression.
+ *
+ * This error occurs when expression has content that could not be processed.
+ * The user should ensure that expression always has operator before operand.
+ */
+#define ERROR_EXPRESSION_TEXT "problem with expression.\nContent in expression was ignored! Ensure that before every operand there is operator"
 
 /**
  * @brief Error message for being unable to open the output file.
@@ -54,7 +61,7 @@
  * This message is displayed if the input arguments are invalid. The user should ensure the correct usage:
  * <func> <out-file> [<limits>], where <func> is a valid mathematical function enclosed in quotes if necessary.
  */
-#define ERROR_ARGS_TEXT "invalid input. Correct usage: <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces.\n"
+#define ERROR_ARGS_TEXT "invalid input. Correct usage: <func> <out-file> [<limits>].\nEnsure the function is a single-variable mathematical expression and enclosed in quotes if it contains spaces"
 
 /**
  * @brief Error code for invalid arguments.

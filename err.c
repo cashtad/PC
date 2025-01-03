@@ -12,6 +12,6 @@
  * @note The program will terminate after this function is called, so no code after the call will be executed.
  */
 void error_exit(const char *message, const int exit_code) {
-    fprintf(stderr, "Error: %s\n", message);
+    fprintf(stderr, "Error: %s.\n", message);
     exit(exit_code);
 }

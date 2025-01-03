@@ -106,7 +106,7 @@ int main(const int argc, char *argv[]) {
 
     lexer = initialize_lexer(expression);
 
-    abstract_syntax_tree = parse_expr(lexer);
+    abstract_syntax_tree = parse(lexer);
 
     draw_graph(limits, output_file, abstract_syntax_tree);
 
